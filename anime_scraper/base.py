@@ -1,42 +1,80 @@
 from abc import ABC, abstractmethod
+from typing import List
+import asyncio
 
-from libraries.anime_scraper.schemas import (
-    DownloadRangeLink,
-    SearchAnimeInfo,
+from anime_scraper.browser_manager import BrowserManager
+from anime_scraper.schemas import (
+    BulkDownloadLinkInfo,
+    PagedSearchAnimeInfo,
     AnimeInfo,
-    StreamingLink,
-    DownloadLink,
+    DownloadLinkInfo,
 )
 
 
 class BaseAnimeScraper(ABC):
-    def __init__(self, concurrent_limit: int):
-        self.concurrent_limit = concurrent_limit
-
+    # ASYNC METHODS
     @abstractmethod
-    async def search_anime(self, query: str) -> list[SearchAnimeInfo]:
+    async def search_anime_async(
+        self, query: str = None, **kwargs
+    ) -> List[PagedSearchAnimeInfo]:
         pass
 
     @abstractmethod
-    async def get_anime_info(self, anime: str) -> AnimeInfo:
+    async def get_anime_info_async(self, anime_id: str = None) -> AnimeInfo:
         pass
 
     @abstractmethod
-    async def get_emission_date(self, anime: str) -> str:
+    async def get_static_download_links_async(
+        self, anime_id: str = None, episode_id: int = None
+    ) -> List[DownloadLinkInfo]:
         pass
 
     @abstractmethod
-    async def get_streaming_links(
-        self, anime: str, last_episode: str
-    ) -> list[StreamingLink]:
+    async def get_dynamic_download_links_async(
+        self,
+        anime_id: str = None,
+        episode_id: int = None,
+        link_limit: int = None,
+        browser: BrowserManager = None,
+    ) -> List[DownloadLinkInfo]:
         pass
 
     @abstractmethod
-    async def get_download_link(self, episode_link: str) -> DownloadLink:
+    async def get_bulk_dynamic_download_links_async(
+        self,
+        anime_id: str = None,
+        episodes_ids: List[int] = None,
+        link_limit: int = None,
+        max_concurrent: int = 3,
+    ) -> List[BulkDownloadLinkInfo]:
         pass
 
-    @abstractmethod
-    async def get_range_download_links(
-        self, episode_links: list[str]
-    ) -> list[DownloadRangeLink]:
-        pass
+    # SYNC METHODS
+
+    def search_anime(
+        self, query: str = None, **kwargs
+    ) -> List[PagedSearchAnimeInfo]:
+        return asyncio.run(self.search_anime_async(query, **kwargs))
+
+    def get_anime_info(self, anime_id: str = None) -> AnimeInfo:
+        return asyncio.run(self.get_anime_info_async(anime_id))
+
+    def get_static_download_links(
+        self, anime_id: str = None, episode_id: int = None
+    ) -> List[DownloadLinkInfo]:
+        return asyncio.run(
+            self.get_static_download_links_async(anime_id, episode_id)
+        )
+
+    def get_dynamic_download_links(
+        self,
+        anime_id: str = None,
+        episode_id: int = None,
+        link_limit: int = None,
+        browser: BrowserManager = None,
+    ) -> List[DownloadLinkInfo]:
+        return asyncio.run(
+            self.get_dynamic_download_links_async(
+                anime_id, episode_id, link_limit, browser
+            )
+        )
