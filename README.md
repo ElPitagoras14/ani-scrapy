@@ -31,7 +31,7 @@ pip install py-anime-scraper
 From GitHub:
 
 ```bash
-pip install git+https://github.com/your_username/py-anime-scraper.git
+pip install git+https://github.com/ElPitagoras14/py-anime-scraper.git
 ```
 
 ---
