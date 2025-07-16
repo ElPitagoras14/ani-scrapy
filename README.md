@@ -1,6 +1,6 @@
-# py-anime-scraper
+# Py Anime Scraper
 
-<!-- [![PyPI Version](https://img.shields.io/pypi/v/py-anime-scraper.svg)](https://pypi.org/project/py-anime-scraper/) -->
+[![PyPI Version](https://img.shields.io/pypi/v/py-anime-scraper.svg)](https://pypi.org/project/py-anime-scraper/)
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -61,8 +61,9 @@ playwright install chromium
 from anime_scraper.scrapers.animeflv import AnimeFLVScraper
 import asyncio
 
+
 async def main():
-scraper = AnimeFLVScraper()
+    scraper = AnimeFLVScraper()
 
     # Search anime
     results = await scraper.search_anime_async("naruto")
@@ -73,15 +74,20 @@ scraper = AnimeFLVScraper()
     print(info)
 
     # Get static download links
-    links_static = await scraper.get_static_download_links_async(info.id, episode_id=1)
+    links_static = await scraper.get_static_download_links_async(
+        info.id, episode_id=1
+    )
     print(links_static)
 
     # Get dynamic download links (requires Chromium installed)
-    links_dynamic = await scraper.get_dynamic_download_links_async(info.anime_id, episode_id=1)
+    links_dynamic = await scraper.get_dynamic_download_links_async(
+        info.id, episode_id=1
+    )
     print(links_dynamic)
 
-if **name** == "**main**":
-asyncio.run(main())
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 For synchronous use, you can do:
@@ -120,7 +126,7 @@ pip install -r requirements.txt
 
 ## 🚧 Coming Soon
 
-Currently, **py-anime-scraper** only supports AnimeFLV, but support for more anime websites is in progress and will be added soon.
+Currently, **py-anime-scraper** only supports **AnimeFLV**, but support for more anime websites is in progress and will be added soon.
 
 If you want to contribute by adding new scrapers for other sites, contributions are welcome!
 

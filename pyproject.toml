@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py-anime-scraper"
-version = "0.1.0"
+version = "0.1.2"
 description = "Async-first Python library for scraping anime websites, currently supporting AnimeFLV"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -23,11 +23,11 @@ classifiers = [
 ]
 
 dependencies = [
-  "aiohttp>=3.12,<4.0",
-  "beautifulsoup4>=4.13,<5.0",
-  "playwright>=1.53,<2.0",
-  "lxml>=6.0,<7.0",
-  "loguru>=0.7,<1.0"
+  "aiohttp",
+  "beautifulsoup4",
+  "playwright",
+  "lxml",
+  "loguru"
 ]
 
 [project.urls]
