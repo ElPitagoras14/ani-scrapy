@@ -11,11 +11,6 @@ class _AnimeType(Enum):
     SPECIAL = "Special"
 
 
-class _AnimeFormat(Enum):
-    DUB = "Dub"
-    SUB = "Sub"
-
-
 class _RelatedType(Enum):
     PREQUEL = "Prequel"
     SEQUEL = "Sequel"
@@ -24,11 +19,16 @@ class _RelatedType(Enum):
 
 
 @dataclass
-class SearchAnimeInfo:
+class BaseAnimeInfo:
     id: str
     title: str
     type: _AnimeType
     poster: str
+
+
+@dataclass
+class SearchAnimeInfo(BaseAnimeInfo):
+    pass
 
 
 @dataclass
@@ -42,28 +42,24 @@ class PagedSearchAnimeInfo:
 class RelatedInfo:
     id: str
     title: str
-    type: str
+    type: _RelatedType
 
 
 @dataclass
 class EpisodeInfo:
     id: str
-    anime: str
+    anime_id: str
     image_preview: Optional[str] = None
 
 
 @dataclass
-class AnimeInfo:
-    id: str
-    title: str
-    poster: str
+class AnimeInfo(BaseAnimeInfo):
     synopsis: str
-    rating: str
     is_finished: bool
-    type: _AnimeType
-    other_titles: Optional[List[str]] = field(default_factory=list)
-    genres: Optional[List[str]] = field(default_factory=list)
-    related_info: Optional[List[RelatedInfo]] = field(default_factory=list)
+    rating: str | None = None
+    other_titles: List[str] = field(default_factory=list)
+    genres: List[str] = field(default_factory=list)
+    related_info: List[RelatedInfo] = field(default_factory=list)
     next_episode_date: Optional[datetime] = None
     episodes: List[EpisodeInfo] = field(default_factory=list)
 
@@ -71,11 +67,10 @@ class AnimeInfo:
 @dataclass
 class DownloadLinkInfo:
     server: str
-    format: _AnimeFormat
     url: Optional[str] = None
 
 
 @dataclass
-class BulkDownloadLinkInfo:
+class EpisodeDownloadInfo:
     episode_id: int
     download_links: List[DownloadLinkInfo]

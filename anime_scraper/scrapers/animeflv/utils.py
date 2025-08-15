@@ -1,8 +1,8 @@
 from playwright.async_api import Page
 
 preference_order_tabs = [
-    "YourUpload",
     "SW",
+    "YourUpload",
 ]
 
 allowed_popups = [
@@ -11,15 +11,21 @@ allowed_popups = [
 
 
 async def close_not_allowed_popups(page: Page):
-    await page.wait_for_load_state("domcontentloaded")
-    allowed = False
-    for allowed_popup in allowed_popups:
-        if allowed_popup in page.url:
-            allowed = True
-            break
+    try:
+        await page.wait_for_load_state("domcontentloaded")
+        allowed = False
+        for allowed_popup in allowed_popups:
+            if allowed_popup in page.url:
+                allowed = True
+                break
 
-    if not allowed:
-        await page.close()
+        if not allowed:
+            await page.close()
+    except Exception:
+        try:
+            await page.close()
+        except Exception:
+            pass
 
 
 def get_order_idx(tabs: list[str]) -> list[int]:
