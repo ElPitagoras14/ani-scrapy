@@ -1,24 +1,20 @@
+import asyncio
 import json
 import aiohttp
-import asyncio
-from typing import List, Optional
 from bs4 import BeautifulSoup, Tag
 from datetime import datetime
-from loguru import logger
+
 from anime_scraper.base import BaseAnimeScraper
 from anime_scraper.browser_manager import BrowserManager
-
 from anime_scraper.utils import (
     clean_related_type,
     clean_text,
 )
-from anime_scraper.tab_link import get_stape_link
 from anime_scraper.schemas import (
-    _AnimeFormat,
     _AnimeType,
     _RelatedType,
+    EpisodeDownloadInfo,
     AnimeInfo,
-    BulkDownloadLinkInfo,
     DownloadLinkInfo,
     PagedSearchAnimeInfo,
     RelatedInfo,
@@ -31,8 +27,12 @@ from anime_scraper.exceptions import (
     ScraperTimeoutError,
 )
 from anime_scraper.scrapers.animeflv.tab_link import (
-    get_yourupload_link_wrapper,
-    get_sw_link_wrapper,
+    get_yourupload_link,
+    get_sw_link,
+)
+from anime_scraper.scrapers.animeflv.file_link import (
+    get_sw_file_link,
+    get_yourupload_file_link,
 )
 from anime_scraper.scrapers.animeflv.utils import (
     close_not_allowed_popups,
@@ -60,26 +60,45 @@ anime_type_map = {
     "Especial": _AnimeType.SPECIAL,
 }
 
-format_map = {
-    "DUB": _AnimeFormat.SUB,
-    "SUB": _AnimeFormat.SUB,
+get_tab_download_link = {
+    "SW": get_sw_link,
+    "YourUpload": get_yourupload_link,
 }
 
-get_tab_download_link = {
-    "SW": get_sw_link_wrapper,
-    "YourUpload": get_yourupload_link_wrapper,
+get_file_download_link = {
+    "SW": get_sw_file_link,
+    "YourUpload": get_yourupload_file_link,
 }
 
 
 class AnimeFLVScraper(BaseAnimeScraper):
+    """
+    Scraper for animeflv.net.
+    """
+
+    def __init__(self, verbose: bool = False, level: str = "info"):
+        """
+        Initialize the scraper.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            Whether to enable verbose logging. Defaults to False.
+        level : str, optional
+            The level of the messages to log (info, debug, warning,
+            error, critical). Defaults to "info".
+        """
+        super().__init__(verbose, level)
+        self._log("Initializing AnimeFLV scraper", "debug")
+
     def _parse_anime_info(self, element: Tag) -> SearchAnimeInfo:
         try:
-            anime_id = element.find("a", href=True)["href"].split("/")[-1]
-            type_ = element.find("span", class_="Type").text
-            title = element.find("h3").text
-            poster = element.find("img")["src"]
+            anime_id = element.select_one("a[href]")["href"].split("/")[-1]
+            type_ = element.select_one("span.Type").text
+            title = element.select_one("h3").text
+            poster = element.select_one("img")["src"]
 
-            logger.debug(f"Found anime '{title}' with id '{anime_id}'")
+            self._log(f"Found anime '{title}' with id '{anime_id}'", "debug")
 
             return SearchAnimeInfo(
                 id=anime_id,
@@ -92,23 +111,47 @@ class AnimeFLVScraper(BaseAnimeScraper):
 
     async def search_anime_async(
         self,
-        query: str = None,
+        query: str,
         page: int = 1,
-    ) -> List[PagedSearchAnimeInfo]:
-        if not isinstance(page, int):
-            raise TypeError("The variable 'page' must be of type 'int'")
+    ) -> PagedSearchAnimeInfo:
+        """
+        Search for anime by query.
+
+        Parameters
+        ----------
+        query : str
+            The query to search for.
+        page : int
+            The page number to search for. Defaults to 1.
+
+        Returns
+        -------
+        PagedSearchAnimeInfo
+            An object containing the page number, total pages, and animes found.
+
+        Raises
+        ------
+        ValueError
+            If the query is not provided or is less than 3 characters.
+        ScraperBlockedError
+            If the request is blocked by the server.
+        ScraperTimeoutError
+            If the request times out.
+        ScraperParseError
+            If the response from the server cannot be parsed.
+        """
         if page < 1:
             raise ValueError("The variable 'page' must be greater than 0")
 
-        if query is None:
-            raise ValueError("The variable 'query' must be provided")
         if len(query) < 3:
             raise ValueError(
                 "The variable 'query' must be at least 3 characters"
             )
 
-        context_logger = logger.bind(query=query, page=page)
-        context_logger.info("Searching for anime")
+        self._log(
+            f"Searching for anime with query '{query}' and page {page}",
+            "info",
+        )
 
         params = {"q": query, "page": page}
 
@@ -129,7 +172,7 @@ class AnimeFLVScraper(BaseAnimeScraper):
                     "div.Container ul.ListAnimes li article"
                 )
 
-                logger.info(f"Found {len(elements)} animes")
+                self._log(f"Found {len(elements)} animes", "info")
 
                 animes_info = [
                     self._parse_anime_info(element) for element in elements
@@ -145,11 +188,33 @@ class AnimeFLVScraper(BaseAnimeScraper):
                     animes=animes_info,
                 )
 
-    async def get_anime_info_async(self, anime_id: str = None) -> AnimeInfo:
-        if not isinstance(anime_id, str):
-            raise TypeError("The variable 'anime_id' must be of type 'str'")
+    async def get_anime_info_async(self, anime_id: str) -> AnimeInfo:
+        """
+        Get information about an anime.
 
-        logger.info(f"Getting anime info for anime with id '{anime_id}'")
+        Parameters
+        ----------
+        anime_id : str
+            The id of the anime to get information about.
+
+        Returns
+        -------
+        AnimeInfo
+            Information about the anime.
+
+        Raises
+        ------
+        TypeError
+            If the anime_id is not a string.
+        ScraperBlockedError
+            If the request is blocked by the server.
+        ScraperTimeoutError
+            If the request times out.
+        ScraperParseError
+            If the response from the server cannot be parsed.
+        """
+
+        self._log(f"Getting anime info for anime with id '{anime_id}'", "info")
 
         url = f"{ANIME_URL}/{anime_id}"
         async with aiohttp.ClientSession() as session:
@@ -215,7 +280,7 @@ class AnimeFLVScraper(BaseAnimeScraper):
                     episodes.append(
                         EpisodeInfo(
                             id=episode,
-                            anime=anime_id,
+                            anime_id=anime_id,
                             image_preview=image_prev,
                         )
                     )
@@ -242,29 +307,54 @@ class AnimeFLVScraper(BaseAnimeScraper):
                     related_info=related_info,
                     episodes=episodes,
                     next_episode_date=(
-                        datetime.fromisoformat(next_episode_date)
+                        datetime.fromisoformat(next_episode_date).date()
                         if next_episode_date
                         else None
                     ),
                 )
 
-    async def get_static_download_links_async(
+    async def get_table_download_links_async(
         self,
-        anime_id: str = None,
-        episode_id: int = None,
-    ) -> List[DownloadLinkInfo]:
-        if not isinstance(anime_id, str):
-            raise TypeError("The variable 'anime_id' must be of type 'str'")
-        if not isinstance(episode_id, int):
-            raise TypeError("The variable 'episode_id' must be of type 'int'")
+        anime_id: str,
+        episode_id: int,
+    ) -> EpisodeDownloadInfo:
+        """
+        Get the table download links for an episode.
+
+        Parameters
+        ----------
+        anime_id : str
+            The id of the anime.
+        episode_id : int
+            The id of the episode.
+
+        Returns
+        -------
+        EpisodeDownloadInfo
+            An object containing the episode id and download links.
+
+        Raises
+        ------
+        TypeError
+            If the anime_id or episode_id is not a string or int, respectively.
+        ValueError
+            If the episode_id is less than 0.
+        ScraperBlockedError
+            If the request is blocked by the server.
+        ScraperTimeoutError
+            If the request times out.
+        ScraperParseError
+            If the response from the server cannot be parsed.
+        """
         if episode_id < 0:
             raise ValueError(
                 "The variable 'episode_id' must be greater than or equal to 0"
             )
 
-        logger.info(
-            f"Getting dynamic download links for anime with id '{anime_id}' "
-            + f"and episode id '{episode_id}'"
+        self._log(
+            f"Getting table download links for anime with id '{anime_id}' "
+            + f"and episode id '{episode_id}'",
+            "info",
         )
 
         url = f"{ANIME_VIDEO_URL}/{anime_id}-{episode_id}"
@@ -282,38 +372,70 @@ class AnimeFLVScraper(BaseAnimeScraper):
                 html_text = await response.text()
                 soup = BeautifulSoup(html_text, "lxml")
 
-                rows_list = soup.select("div.WdgtCn table tbody tr")
+                rows_list = soup.select("table.RTbl.Dwnl tbody tr")
                 rows = []
                 for row in rows_list:
                     cells = row.select("td")
-                    logger.debug(
-                        f"Found download link for server '{cells[0].text}'"
+                    self._log(
+                        f"Found download link for server '{cells[0].text}'",
+                        "debug",
                     )
 
                     rows.append(
                         DownloadLinkInfo(
                             server=cells[0].text,
-                            format=format_map.get(
-                                cells[2].text, _AnimeFormat.SUB
-                            ),
                             url=cells[3].select_one("a")["href"],
                         )
                     )
 
-            return rows
+            return EpisodeDownloadInfo(
+                episode_id=episode_id,
+                download_links=rows,
+            )
 
-    async def get_dynamic_download_links_async(
+    async def get_iframe_download_links_async(
         self,
         anime_id: str,
         episode_id: int,
-        link_limit: int = None,
-        browser: BrowserManager = None,
-    ) -> List[DownloadLinkInfo]:
+        browser: BrowserManager | None = None,
+    ) -> EpisodeDownloadInfo:
+        """
+        Get the iframe download links for an episode.
+
+        Parameters
+        ----------
+        anime_id : str
+            The id of the anime.
+        episode_id : int
+            The id of the episode.
+        browser : BrowserManager, optional
+            The browser to use for scraping. If not provided, a new browser
+            will be created.
+
+        Returns
+        -------
+        EpisodeDownloadInfo
+            An object containing the episode id and download links.
+
+        Raises
+        ------
+        TypeError
+            If the anime_id or episode_id is not a string or int, respectively.
+        ValueError
+            If the episode_id is less than 0.
+        ScraperBlockedError
+            If the request is blocked by the server.
+        ScraperTimeoutError
+            If the request times out.
+        ScraperParseError
+            If the response from the server cannot be parsed.
+        """
         url = f"{ANIME_VIDEO_URL}/{anime_id}-{episode_id}"
 
-        logger.info(
-            f"Getting dynamic download links for anime with id '{anime_id}' "
-            + f"and episode id '{episode_id}'"
+        self._log(
+            f"Getting iframe download links for anime with id '{anime_id}' "
+            + f"and episode id '{episode_id}'",
+            "info",
         )
 
         external_browser = browser is not None
@@ -322,22 +444,7 @@ class AnimeFLVScraper(BaseAnimeScraper):
 
         page = await browser.new_page()
         page.on("popup", close_not_allowed_popups)
-
-        search_page = await browser.new_page()
-        search_page.on("popup", close_not_allowed_popups)
-
         await page.goto(url)
-
-        rows_list = await page.query_selector_all("div.WdgtCn table tbody tr")
-        stape_url = None
-        for row in rows_list:
-            cells = await row.query_selector_all("td")
-            server = await cells[0].inner_text()
-            if server == "Stape":
-                logger.debug("Found stape link")
-                raw_stape_url = await cells[3].query_selector("a")
-                stape_url = await raw_stape_url.get_attribute("href")
-                break
 
         server_urls = await page.query_selector_all("div.CpCnA ul.CapiTnv li")
         server_names = [
@@ -345,69 +452,26 @@ class AnimeFLVScraper(BaseAnimeScraper):
             for server_url in server_urls
         ]
 
-        cnt_valid = 0
         download_links = []
 
-        if stape_url:
-            try:
-                download_link = await get_stape_link(search_page, stape_url)
-
-                if not download_link:
-                    download_links.append(
-                        DownloadLinkInfo(
-                            server="Stape",
-                            format=_AnimeFormat.SUB,
-                            url=None,
-                        )
-                    )
-                else:
-                    download_links.append(
-                        DownloadLinkInfo(
-                            server="Stape",
-                            format=_AnimeFormat.SUB,
-                            url=download_link,
-                        )
-                    )
-                    cnt_valid += 1
-            except TimeoutError as e:
-                logger.debug("Timeout getting stape download link")
-                raise ScraperTimeoutError(e)
-            except Exception:
-                logger.exception("Error getting stape download link")
-
-        if link_limit is not None and cnt_valid >= link_limit:
-            await page.close()
-            await search_page.close()
-            if not external_browser:
-                await browser.__aexit__(None, None, None)
-            return download_links
-
         order_idx = get_order_idx(server_names)
-
         for idx in order_idx:
-            if link_limit is not None and cnt_valid >= link_limit:
-                await page.close()
-                await search_page.close()
-                if not external_browser:
-                    await browser.__aexit__(None, None, None)
-                return download_links
-
             name = server_names[idx]
 
             if name not in get_tab_download_link:
                 continue
 
-            url = await server_urls[idx].click()
-
+            await server_urls[idx].click()
+            await asyncio.sleep(0.2)
+            await server_urls[idx].click()
             try:
                 get_fn = get_tab_download_link[name]
-                download_link = await get_fn(page, search_page)
+                download_link = await get_fn(page)
 
                 if download_link is None:
                     download_links.append(
                         DownloadLinkInfo(
                             server=name,
-                            format=_AnimeFormat.SUB,
                             url=None,
                         )
                     )
@@ -416,78 +480,102 @@ class AnimeFLVScraper(BaseAnimeScraper):
                 download_links.append(
                     DownloadLinkInfo(
                         server=name,
-                        format=_AnimeFormat.SUB,
                         url=download_link,
                     )
                 )
-                cnt_valid += 1
 
             except TimeoutError as e:
-                logger.debug("Timeout getting download link")
+                self._log("Timeout getting download link", "error")
                 download_links.append(
                     DownloadLinkInfo(
                         server=name,
-                        format=_AnimeFormat.SUB,
                         url=None,
                     )
                 )
                 raise ScraperTimeoutError(e)
-            except Exception:
-                logger.exception("Error getting download link")
+            except Exception as e:
+                self._log("Error getting download link", "error")
                 download_links.append(
                     DownloadLinkInfo(
                         server=name,
-                        format=_AnimeFormat.SUB,
                         url=None,
                     )
                 )
+                raise e
 
         await page.close()
-        await search_page.close()
 
         if not external_browser:
             await browser.__aexit__(None, None, None)
 
-        return download_links
+        return EpisodeDownloadInfo(
+            episode_id=episode_id,
+            download_links=download_links,
+        )
 
-    async def _download_episode_with_semaphore(
+    async def get_file_download_links_async(
         self,
-        anime_id: str,
-        episode_id: int,
-        link_limit: Optional[int],
-        browser_manager: BrowserManager,
-        semaphore: asyncio.Semaphore,
-    ) -> List[DownloadLinkInfo]:
-        async with semaphore:
-            return await self.get_dynamic_download_links_async(
-                anime_id, episode_id, link_limit, browser_manager
+        download_info: DownloadLinkInfo,
+        browser: BrowserManager | None = None,
+    ) -> str:
+        """
+        Get the file download link for a download link info object.
+
+        Parameters
+        ----------
+        download_info : DownloadLinkInfo
+            The download link info object.
+        browser : BrowserManager, optional
+            The browser to use for scraping. If not provided, a new browser
+            will be created.
+
+        Returns
+        -------
+        str
+            The file download link.
+
+        Raises
+        ------
+        TypeError
+            If the download_info is not a DownloadLinkInfo object.
+        ValueError
+            If the download_info.server is not supported for file download.
+        """
+        server = download_info.server
+        url = download_info.url
+
+        self._log(
+            f"Getting file download link for server '{download_info.server}'",
+            "info",
+        )
+
+        if server not in get_file_download_link:
+            self._log(
+                f"Server '{server}' not supported for file download",
+                "error",
             )
+            return None
 
-    async def get_bulk_dynamic_download_links_async(
-        self,
-        anime_id: str,
-        episode_ids: List[int],
-        link_limit: int = None,
-        max_concurrent: int = 3,
-    ) -> List[BulkDownloadLinkInfo]:
-        semaphore = asyncio.Semaphore(max_concurrent)
+        external_browser = browser is not None
+        if not external_browser:
+            browser = await BrowserManager().__aenter__()
 
-        async with BrowserManager() as browser:
-            tasks = [
-                self._download_episode_with_semaphore(
-                    anime_id, ep_id, link_limit, browser, semaphore
-                )
-                for ep_id in episode_ids
-            ]
+        page = await browser.new_page()
+        page.on("popup", close_not_allowed_popups)
 
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+        try:
+            get_file_fn = get_file_download_link[server]
+            file_link = await get_file_fn(page, url)
 
-        episode_results = {}
-        for ep_id, result in zip(episode_ids, results):
-            if isinstance(result, Exception):
-                episode_results[ep_id] = []
-                print(f"Error en episodio {ep_id}: {result}")
-            else:
-                episode_results[ep_id] = result
+            await page.close()
 
-        return episode_results
+            if not external_browser:
+                await browser.__aexit__(None, None, None)
+
+            return file_link
+        except TimeoutError as e:
+            self._log("Timeout getting file download link", "error")
+            raise ScraperTimeoutError(e)
+        except Exception as e:
+            self._log("Error getting file download link", "error")
+            raise e

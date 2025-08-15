@@ -59,31 +59,57 @@ playwright install chromium
 
 ```python
 from anime_scraper.scrapers.animeflv import AnimeFLVScraper
+from anime_scraper.scrapers.jkanime.scraper import JKAnimeScraper
 import asyncio
 
 
 async def main():
-    scraper = AnimeFLVScraper()
+    animeflv_scraper = AnimeFLVScraper(verbose=False)
+    jkanime_scraper = JKAnimeScraper(verbose=False)
 
     # Search anime
-    results = await scraper.search_anime_async("naruto")
-    print(results)
+    an_results = await animeflv_scraper.search_anime_async(query="naruto", page=1)
+    print(an_results)
+    jk_results = await jkanime_scraper.search_anime_async(query="naruto")
+    print(jk_results)
 
     # Get anime info
-    info = await scraper.get_anime_info_async(results.animes[0].id)
-    print(info)
+    an_info = await animeflv_scraper.get_anime_info_async(anime_id=an_results.animes[0].id)
+    print(an_info)
+    jk_info = await jkanime_scraper.get_anime_info_async(anime_id=jk_results.animes[0].id)
+    print(jk_info)
 
-    # Get static download links
-    links_static = await scraper.get_static_download_links_async(
-        info.id, episode_id=1
+    # Get table download links
+    an_table_links = await animeflv_scraper.get_table_download_links_async(
+        anime_id=an_info.id, episode_id=1
     )
-    print(links_static)
+    print(an_table_links)
+    jk_table_links = await jkanime_scraper.get_table_download_links_async(
+        anime_id=jk_info.id, episode_id=1
+    )
+    print(jk_table_links)
 
-    # Get dynamic download links (requires Chromium installed)
-    links_dynamic = await scraper.get_dynamic_download_links_async(
-        info.id, episode_id=1
+    # Get iframe download links
+    an_iframe_links = await animeflv_scraper.get_iframe_download_links_async(
+        anime_id=an_info.id, episode_id=1
     )
-    print(links_dynamic)
+    print(an_iframe_links)
+
+    # Note: Not supported yet
+    # jk_iframe_links = await jkanime_scraper.get_iframe_download_links_async(
+    #     anime_id=jk_info.id, episode_id=1
+    # )
+    # print(jk_iframe_links)
+
+    # Get file download links
+    an_file_links = await animeflv_scraper.get_file_download_links_async(
+        download_info=an_iframe_links.download_links[0]
+    )
+    print(an_file_links)
+    jk_file_links = await jkanime_scraper.get_file_download_links_async(
+        download_info=jk_table_links.download_links[0]
+    )
+    print(jk_file_links)
 
 
 if __name__ == "__main__":
