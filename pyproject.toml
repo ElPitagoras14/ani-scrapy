@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py-anime-scraper"
-version = "1.0.1"
+version = "1.0.2"
 description = "Async-first Python library for scraping anime websites, currently supporting AnimeFLV"
 readme = "README.md"
 requires-python = ">=3.9"
