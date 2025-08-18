@@ -2,17 +2,22 @@ from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 
 
+from ani_scrapy.core.constants.general import CONTEXT_OPTIONS
+
 stealth = Stealth()
 
 
-class BrowserManager:
+class AsyncBrowser:
     """
-    A class for managing a browser instance.
+    A class for managing an asynchronous browser instance.
 
     Attributes
     ----------
     headless : bool, optional
         Whether to run the browser in headless mode. Defaults to True.
+    executable_path : str, optional
+        The path to the browser executable. If not provided, the default
+        browser will be chromium.
     args : list[str], optional
         Additional arguments to pass to the browser. Defaults to an empty list.
     """
@@ -20,33 +25,31 @@ class BrowserManager:
     def __init__(
         self,
         headless: bool = True,
+        executable_path: str | None = None,
         args: list[str] = [],
     ):
         self.headless = headless
+        self.executable_path = executable_path
         self.args = args
         self.playwright = None
         self.browser = None
 
     async def __aenter__(self):
         self.playwright = await async_playwright().start()
-        final_args = [
-            "--disable-blink-features=AutomationControlled",
-            *self.args,
-        ]
+        launch_options = {
+            "headless": self.headless,
+            "args": [
+                "--disable-blink-features=AutomationControlled",
+                *self.args,
+            ],
+            "slow_mo": 500,
+        }
+        if self.executable_path:
+            launch_options["executable_path"] = self.executable_path
         self.browser = await self.playwright.chromium.launch(
-            headless=self.headless, args=final_args, slow_mo=500
+            **launch_options,
         )
-        self.context = await self.browser.new_context(
-            ignore_https_errors=True,
-            color_scheme="dark",
-            locale="es-EC",
-            no_viewport=True,
-            timezone_id="America/Guayaquil",
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit"
-            + "/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 "
-            + "Edg/139.0.0.0",
-            viewport={"width": 1080, "height": 720},
-        )
+        self.context = await self.browser.new_context(**CONTEXT_OPTIONS)
         await stealth.apply_stealth_async(self.context)
         return self
 

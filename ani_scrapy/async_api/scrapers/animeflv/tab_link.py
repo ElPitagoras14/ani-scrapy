@@ -1,8 +1,8 @@
 from playwright.async_api import Page
-from anime_scraper.scrapers.animeflv.constants import (
+from ani_scrapy.core.constants.animeflv import (
     SW_DOWNLOAD_URL,
 )
-from anime_scraper.constants import (
+from ani_scrapy.core.constants.general import (
     YOURUPLOAD_DOWNLOAD_URL,
     YOURUPLOAD_TIMEOUT,
     SW_TIMEOUT,

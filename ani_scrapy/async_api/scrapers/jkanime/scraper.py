@@ -3,9 +3,9 @@ from bs4 import BeautifulSoup, Tag
 from urllib.parse import quote
 from curl_cffi import AsyncSession
 
-from anime_scraper.base import BaseAnimeScraper
-from anime_scraper.browser_manager import BrowserManager
-from anime_scraper.schemas import (
+from ani_scrapy.async_api.base import AsyncBaseScraper
+from ani_scrapy.async_api.browser import AsyncBrowser
+from ani_scrapy.core.schemas import (
     _AnimeType,
     _RelatedType,
     AnimeInfo,
@@ -16,88 +16,39 @@ from anime_scraper.schemas import (
     SearchAnimeInfo,
     EpisodeInfo,
 )
-from anime_scraper.exceptions import (
+from ani_scrapy.core.exceptions import (
     ScraperBlockedError,
     ScraperParseError,
     ScraperTimeoutError,
 )
-from anime_scraper.scrapers.jkanime.constants import (
+from ani_scrapy.core.constants.jkanime import (
     BASE_URL,
     SEARCH_URL,
     IMPERSONATE,
+    related_type_map,
+    anime_type_map,
+    month_map,
 )
-from anime_scraper.scrapers.jkanime.file_link import (
+from ani_scrapy.async_api.scrapers.jkanime.file_link import (
     get_streamwish_file_link,
     get_mediafire_file_link,
 )
 
-related_type_map = {
-    "Adicional": _RelatedType.PARALLEL_HISTORY,
-    "Resumen": _RelatedType.PARALLEL_HISTORY,
-    "Version Alternativa": _RelatedType.PARALLEL_HISTORY,
-    "Personaje Incluido": _RelatedType.PARALLEL_HISTORY,
-    "Secuela": _RelatedType.SEQUEL,
-    "Precuela": _RelatedType.PREQUEL,
-}
 
-
-anime_type_map = {
-    "Serie": _AnimeType.TV,
-    "Pelicula": _AnimeType.MOVIE,
-    "OVA": _AnimeType.OVA,
-    "Especial": _AnimeType.SPECIAL,
-}
-
-month_map = {
-    "Enero": 1,
-    "Febrero": 2,
-    "Marzo": 3,
-    "Abril": 4,
-    "Mayo": 5,
-    "Junio": 6,
-    "Julio": 7,
-    "Agosto": 8,
-    "Septiembre": 9,
-    "Octubre": 10,
-    "Noviembre": 11,
-    "Diciembre": 12,
-}
-
-not_supported_yet = [
-    "Mega",
-    "VOE",
-    "Vidhie",
-    "Filemoon",
-    "Mixdrop",
-    "Mp4upload",
-    "Streamtape",
-    "Doodstream",
-]
 get_file_download_link = {
     "Streamwish": get_streamwish_file_link,
     "Mediafire": get_mediafire_file_link,
 }
 
 
-class JKAnimeScraper(BaseAnimeScraper):
+class JKAnimeScraper(AsyncBaseScraper):
     """
-    Scraper for jkanime.net.
+    Async scraper for jkanime.net.
     """
 
-    def __init__(self, verbose: bool = False, level: str = "info"):
-        """
-        Initialize the scraper.
-
-        Parameters
-        ----------
-        verbose : bool, optional
-            Whether to enable verbose logging. Defaults to False.
-        level : str, optional
-            The level of the messages to log (info, debug, warning,
-            error, critical). Defaults to "info".
-        """
+    def __init__(self, verbose: bool = False, level: str = "INFO"):
         super().__init__(verbose, level)
-        self._log("Initializing JKAnime scraper", "debug")
+        self._log("Initializing JKAnime scraper", "DEBUG")
 
     def _parse_anime_info(self, element: Tag) -> SearchAnimeInfo:
         try:
@@ -106,7 +57,7 @@ class JKAnimeScraper(BaseAnimeScraper):
             title = element.select_one("h5 > a").text
             poster = element.select_one("a > div")["data-setbg"]
 
-            self._log(f"Found anime '{title}' with id '{anime_id}'", "debug")
+            self._log(f"Found anime '{title}' with id '{anime_id}'", "DEBUG")
             return SearchAnimeInfo(
                 id=anime_id,
                 title=title,
@@ -116,7 +67,7 @@ class JKAnimeScraper(BaseAnimeScraper):
         except Exception as e:
             raise ScraperParseError(e)
 
-    async def search_anime_async(self, query: str) -> PagedSearchAnimeInfo:
+    async def search_anime(self, query: str) -> PagedSearchAnimeInfo:
         """
         Search for anime by query.
 
@@ -141,11 +92,13 @@ class JKAnimeScraper(BaseAnimeScraper):
         ScraperParseError
             If the response from the server cannot be parsed.
         """
-        self._log(f"Searching for anime with query '{query}'", "info")
+        self._log(
+            f"Searching for anime with query '{query}'",
+        )
 
         safe_query = quote(query)
         search_anime_url = f"{SEARCH_URL}/{safe_query}"
-        self._log(f"Using search url '{search_anime_url}'", "debug")
+        self._log(f"Using search url '{search_anime_url}'", "DEBUG")
 
         async with AsyncSession() as session:
             response = await session.get(
@@ -163,7 +116,9 @@ class JKAnimeScraper(BaseAnimeScraper):
             html_text = response.text
             soup = BeautifulSoup(html_text, "lxml")
             elements = soup.select("div.row.page_directorio > div")
-            self._log(f"Found {len(elements)} animes", "info")
+            self._log(
+                f"Found {len(elements)} animes",
+            )
 
             animes_info = [
                 self._parse_anime_info(element) for element in elements
@@ -174,10 +129,10 @@ class JKAnimeScraper(BaseAnimeScraper):
                 animes=animes_info,
             )
 
-    async def get_anime_info_async(
+    async def get_anime_info(
         self,
         anime_id: str,
-        browser: BrowserManager = None,
+        browser: AsyncBrowser = None,
     ) -> AnimeInfo:
         """
         Get information about an anime.
@@ -186,7 +141,7 @@ class JKAnimeScraper(BaseAnimeScraper):
         ----------
         anime_id : str
             The id of the anime to get information about.
-        browser : BrowserManager, optional
+        browser : AsyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
 
@@ -208,11 +163,13 @@ class JKAnimeScraper(BaseAnimeScraper):
         """
         url = f"{BASE_URL}/{anime_id}"
 
-        self._log(f"Getting anime info for anime with id '{anime_id}'", "info")
+        self._log(
+            f"Getting anime info for anime with id '{anime_id}'",
+        )
 
         external_browser = browser is not None
         if not external_browser:
-            browser = await BrowserManager().__aenter__()
+            browser = await AsyncBrowser().__aenter__()
 
         page = await browser.new_page()
         await page.goto(url)
@@ -325,8 +282,8 @@ class JKAnimeScraper(BaseAnimeScraper):
             episodes=all_episodes,
         )
 
-    async def get_table_download_links_async(
-        self, anime_id: str, episode_id: int, browser: BrowserManager = None
+    async def get_table_download_links(
+        self, anime_id: str, episode_id: int, browser: AsyncBrowser = None
     ) -> EpisodeDownloadInfo:
         """
         Get the table download links for an episode.
@@ -337,7 +294,7 @@ class JKAnimeScraper(BaseAnimeScraper):
             The id of the anime.
         episode_id : int
             The id of the episode.
-        browser : BrowserManager, optional
+        browser : AsyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
 
@@ -364,12 +321,11 @@ class JKAnimeScraper(BaseAnimeScraper):
         self._log(
             f"Getting table download links for anime with id '{anime_id}' "
             + f"and episode id '{episode_id}'",
-            "info",
         )
 
         external_browser = browser is not None
         if not external_browser:
-            browser = await BrowserManager(headless=True).__aenter__()
+            browser = await AsyncBrowser(headless=True).__aenter__()
 
         page = await browser.new_page()
         await page.goto(url)
@@ -391,6 +347,8 @@ class JKAnimeScraper(BaseAnimeScraper):
                 )
             )
 
+        await page.close()
+
         if not external_browser:
             await browser.__aexit__(None, None, None)
 
@@ -399,12 +357,11 @@ class JKAnimeScraper(BaseAnimeScraper):
             download_links=all_download_links,
         )
 
-    async def get_iframe_download_links_async(
+    async def get_iframe_download_links(
         self,
         anime_id: str,
         episode_id: int,
-        link_limit: int,
-        browser: BrowserManager = None,
+        browser: AsyncBrowser = None,
     ) -> EpisodeDownloadInfo:
         """
         Note
@@ -419,9 +376,7 @@ class JKAnimeScraper(BaseAnimeScraper):
             The id of the anime.
         episode_id : int
             The id of the episode.
-        link_limit : int
-            The maximum number of download links to return.
-        browser : BrowserManager, optional
+        browser : AsyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
 
@@ -445,10 +400,10 @@ class JKAnimeScraper(BaseAnimeScraper):
         """
         pass
 
-    async def get_file_download_links_async(
+    async def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
-        browser: BrowserManager = None,
+        browser: AsyncBrowser = None,
     ) -> str:
         """
         Get the file download link for a download link info object.
@@ -457,7 +412,7 @@ class JKAnimeScraper(BaseAnimeScraper):
         ----------
         download_info : DownloadLinkInfo
             The download link info object.
-        browser : BrowserManager, optional
+        browser : AsyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
 
@@ -478,7 +433,6 @@ class JKAnimeScraper(BaseAnimeScraper):
 
         self._log(
             f"Getting file download link for server '{download_info.server}'",
-            "info",
         )
 
         if server not in get_file_download_link:
@@ -490,7 +444,7 @@ class JKAnimeScraper(BaseAnimeScraper):
 
         external_browser = browser is not None
         if not external_browser:
-            browser = await BrowserManager().__aenter__()
+            browser = await AsyncBrowser().__aenter__()
 
         page = await browser.new_page()
 

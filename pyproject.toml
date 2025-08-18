@@ -2,16 +2,18 @@
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.pyrefly]
+project-includes = ["**/*"]
+project-excludes = ['**/*venv/**\*']
+
 [project]
-name = "py-anime-scraper"
-version = "1.0.4"
-description = "Async-first Python library for scraping anime websites, currently supporting AnimeFLV"
+name = "ani-scrapy"
+version = "0.1.4"
+description = "Python library for scraping anime websites, currently supporting AnimeFLV and JKAnime."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 license = { text = "MIT" }
-authors = [
-  { name = "github:ElPitagoras14", email = "jonfrgar@espol.edu.ec" }
-]
+authors = [{ name = "github:ElPitagoras14", email = "jonfrgar@espol.edu.ec" }]
 keywords = ["anime", "scraping", "playwright", "async", "python"]
 
 classifiers = [
@@ -19,7 +21,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Topic :: Internet :: WWW/HTTP",
-  "Topic :: Software Development :: Libraries :: Python Modules"
+  "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 dependencies = [
@@ -28,19 +30,24 @@ dependencies = [
   "playwright",
   "lxml",
   "loguru",
-  "curl_cffi"
+  "curl_cffi",
+  "playwright-stealth",
+  "requests",
+  "cloudscraper",
 ]
 
 [project.urls]
-Homepage = "https://github.com/ElPitagoras14/py-anime-scraper"
-Repository = "https://github.com/ElPitagoras14/py-anime-scraper"
+Homepage = "https://github.com/ElPitagoras14/ani-scrapy"
+Repository = "https://github.com/ElPitagoras14/ani-scrapy"
 
 [project.optional-dependencies]
-dev = [
-  "pytest",
-  "pytest-asyncio",
-  "black",
-  "flake8",
-  "mypy",
-  "isort"
-]
+dev = ["pytest", "pytest-asyncio", "black", "flake8", "mypy", "isort"]
+
+
+[tool.setuptools]
+include-package-data = true
+
+
+[tool.setuptools.packages.find]
+include = ["ani_scrapy*"]
+exclude = ["tests*"]
