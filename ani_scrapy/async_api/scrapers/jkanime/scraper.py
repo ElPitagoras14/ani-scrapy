@@ -186,9 +186,13 @@ class JKAnimeScraper(AsyncBaseScraper):
         is_finished = None
         for l_info in list_info:
             div = l_info.find("div")
-            if div and div.text == "Concluido":
-                is_finished = True
-                break
+            if div:
+                if div.text == "Concluido":
+                    is_finished = True
+                    break
+                if div.text == "En emision":
+                    is_finished = False
+                    break
 
         main_anime_info = soup.select_one("div.anime_info")
         title = main_anime_info.find("h3").text

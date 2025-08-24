@@ -8,7 +8,7 @@ project-excludes = ['**/*venv/**\*']
 
 [project]
 name = "ani-scrapy"
-version = "0.1.7"
+version = "0.1.8"
 description = "Python library for scraping anime websites, currently supporting AnimeFLV and JKAnime."
 readme = "README.md"
 requires-python = ">=3.8"
