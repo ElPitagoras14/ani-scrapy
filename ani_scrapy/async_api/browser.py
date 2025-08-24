@@ -40,15 +40,13 @@ class AsyncBrowser:
             "headless": self.headless,
             "args": [
                 "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
                 *self.args,
             ],
-            "slow_mo": 500,
         }
         if self.executable_path:
             launch_options["executable_path"] = self.executable_path
-        self.browser = await self.playwright.chromium.launch(
-            **launch_options,
-        )
+        self.browser = await self.playwright.chromium.launch(**launch_options)
         self.context = await self.browser.new_context(**CONTEXT_OPTIONS)
         await stealth.apply_stealth_async(self.context)
         return self

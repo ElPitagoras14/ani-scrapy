@@ -31,7 +31,7 @@ with SyncBrowser(
         )
         print(file_links)
     except Exception:
-        print(None)
+        pass
 
 
 iframe_links = scraper.get_iframe_download_links(
@@ -45,4 +45,4 @@ try:
     )
     print(file_links)
 except Exception:
-    print(None)
+    pass

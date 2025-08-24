@@ -32,7 +32,7 @@ async def main():
             )
             print(file_links)
         except Exception:
-            print(None)
+            pass
 
     iframe_links = await scraper.get_iframe_download_links(
         anime_id=anime_id, episode_id=episode_id
@@ -45,7 +45,7 @@ async def main():
         )
         print(file_links)
     except Exception:
-        print(None)
+        pass
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ async def main():
             )
             print(file_links)
         except Exception:
-            print(None)
+            pass
 
     anime_info = await scraper.get_anime_info(anime_id=anime_id)
     print(anime_info)
@@ -56,7 +56,7 @@ async def main():
         )
         print(file_links)
     except Exception:
-        print(None)
+        pass
 
 
 if __name__ == "__main__":

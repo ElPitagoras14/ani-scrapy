@@ -1,4 +1,3 @@
-import asyncio
 import json
 import aiohttp
 from typing import Optional
@@ -437,7 +436,7 @@ class AnimeFLVScraper(AsyncBaseScraper):
                 continue
 
             await server_urls[idx].click()
-            await asyncio.sleep(0.2)
+            await page.wait_for_timeout(300)
             await server_urls[idx].click()
             try:
                 get_fn = get_tab_download_link[name]

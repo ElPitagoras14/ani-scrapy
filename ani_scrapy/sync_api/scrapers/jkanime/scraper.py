@@ -177,7 +177,12 @@ class JKAnimeScraper(SyncBaseScraper):
         list_info = info_container.find_all("li")
         type_ = anime_type_map.get(list_info[0].text, _AnimeType.TV)
         genres = list_info[1].find_all("a")
-        is_finished = list_info[-2].find("div").text == "Concluido"
+        is_finished = None
+        for l_info in list_info:
+            div = l_info.find("div")
+            if div and div.text == "Concluido":
+                is_finished = True
+                break
 
         main_anime_info = soup.select_one("div.anime_info")
         title = main_anime_info.find("h3").text
@@ -202,6 +207,9 @@ class JKAnimeScraper(SyncBaseScraper):
         for paged_episode in paged_episodes:
             select.click()
             paged_episode.click()
+
+            page.wait_for_timeout(300)
+
             html_text = page.content()
             soup = BeautifulSoup(html_text, "lxml")
             episodes_container = soup.select_one("div#episodes-content")
