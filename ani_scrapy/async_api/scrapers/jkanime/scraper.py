@@ -132,6 +132,7 @@ class JKAnimeScraper(AsyncBaseScraper):
     async def get_anime_info(
         self,
         anime_id: str,
+        tab_timeout: int = 200,
         browser: AsyncBrowser = None,
     ) -> AnimeInfo:
         """
@@ -141,6 +142,8 @@ class JKAnimeScraper(AsyncBaseScraper):
         ----------
         anime_id : str
             The id of the anime to get information about.
+        tab_timeout : int, optional
+            The timeout for waiting for the tab to load. Defaults to 200.
         browser : AsyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
@@ -218,7 +221,7 @@ class JKAnimeScraper(AsyncBaseScraper):
             await select.click()
             await paged_episode.click()
 
-            await page.wait_for_timeout(150)
+            await page.wait_for_timeout(tab_timeout)
 
             html_text = await page.content()
             soup = BeautifulSoup(html_text, "lxml")

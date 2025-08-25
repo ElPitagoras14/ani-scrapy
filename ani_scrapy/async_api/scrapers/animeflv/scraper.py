@@ -372,6 +372,7 @@ class AnimeFLVScraper(AsyncBaseScraper):
         self,
         anime_id: str,
         episode_id: int,
+        tab_timeout: int = 200,
         browser: Optional[AsyncBrowser] = None,
     ) -> EpisodeDownloadInfo:
         """
@@ -383,6 +384,8 @@ class AnimeFLVScraper(AsyncBaseScraper):
             The id of the anime.
         episode_id : int
             The id of the episode.
+        tab_timeout : int, optional
+            The timeout for waiting for the tab to load. Defaults to 200.
         browser : AsyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
@@ -436,7 +439,7 @@ class AnimeFLVScraper(AsyncBaseScraper):
                 continue
 
             await server_urls[idx].click()
-            await page.wait_for_timeout(150)
+            await page.wait_for_timeout(tab_timeout)
             await server_urls[idx].click()
             try:
                 get_fn = get_tab_download_link[name]

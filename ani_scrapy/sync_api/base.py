@@ -20,7 +20,9 @@ class SyncBaseScraper(BaseScraper):
         pass
 
     @abstractmethod
-    def get_anime_info(self, anime_id: str, **kwargs) -> AnimeInfo:
+    def get_anime_info(
+        self, anime_id: str, tab_timeout: int = 200, **kwargs
+    ) -> AnimeInfo:
         pass
 
     @abstractmethod

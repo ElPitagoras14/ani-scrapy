@@ -363,6 +363,7 @@ class AnimeFlvScraper(SyncBaseScraper):
         self,
         anime_id: str,
         episode_id: int,
+        tab_timeout: int = 200,
         browser: Optional[SyncBrowser] = None,
     ) -> "EpisodeDownloadInfo":
         """
@@ -374,6 +375,8 @@ class AnimeFlvScraper(SyncBaseScraper):
             The id of the anime.
         episode_id : int
             The id of the episode.
+        tab_timeout : int, optional
+            The timeout for waiting for the tab to load. Defaults to 200.
         browser : Browser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
@@ -413,7 +416,7 @@ class AnimeFlvScraper(SyncBaseScraper):
                 continue
 
             server_urls[idx].click()
-            page.wait_for_timeout(150)
+            page.wait_for_timeout(tab_timeout)
             server_urls[idx].click()
 
             try:

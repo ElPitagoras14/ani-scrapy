@@ -20,7 +20,9 @@ class AsyncBaseScraper(BaseScraper):
         pass
 
     @abstractmethod
-    async def get_anime_info(self, anime_id: str, **kwargs) -> AnimeInfo:
+    async def get_anime_info(
+        self, anime_id: str, tab_timeout: int = 200, **kwargs
+    ) -> AnimeInfo:
         pass
 
     @abstractmethod
