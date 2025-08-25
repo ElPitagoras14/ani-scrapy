@@ -436,7 +436,7 @@ class AnimeFLVScraper(AsyncBaseScraper):
                 continue
 
             await server_urls[idx].click()
-            await page.wait_for_timeout(300)
+            await page.wait_for_timeout(150)
             await server_urls[idx].click()
             try:
                 get_fn = get_tab_download_link[name]

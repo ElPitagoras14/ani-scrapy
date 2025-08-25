@@ -413,7 +413,7 @@ class AnimeFlvScraper(SyncBaseScraper):
                 continue
 
             server_urls[idx].click()
-            page.wait_for_timeout(300)
+            page.wait_for_timeout(150)
             server_urls[idx].click()
 
             try:

@@ -218,7 +218,7 @@ class JKAnimeScraper(AsyncBaseScraper):
             await select.click()
             await paged_episode.click()
 
-            await page.wait_for_timeout(300)
+            await page.wait_for_timeout(150)
 
             html_text = await page.content()
             soup = BeautifulSoup(html_text, "lxml")

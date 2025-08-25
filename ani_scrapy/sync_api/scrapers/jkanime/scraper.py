@@ -212,7 +212,7 @@ class JKAnimeScraper(SyncBaseScraper):
             select.click()
             paged_episode.click()
 
-            page.wait_for_timeout(300)
+            page.wait_for_timeout(150)
 
             html_text = page.content()
             soup = BeautifulSoup(html_text, "lxml")
