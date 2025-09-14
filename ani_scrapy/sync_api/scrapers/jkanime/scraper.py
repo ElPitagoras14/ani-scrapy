@@ -213,6 +213,15 @@ class JKAnimeScraper(SyncBaseScraper):
         all_episodes = []
         for paged_episode in paged_episodes:
             select.click()
+
+            page.wait_for_timeout(1000)
+
+            current_tabs = browser.context.pages
+
+            if len(current_tabs) > 1:
+                current_tabs[-1].close()
+                select.click()
+
             paged_episode.click()
 
             page.wait_for_timeout(tab_timeout)

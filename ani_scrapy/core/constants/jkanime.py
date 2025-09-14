@@ -43,13 +43,7 @@ month_map = {
     "Diciembre": 12,
 }
 
-not_supported_yet = [
-    "Mega",
-    "VOE",
-    "Vidhie",
-    "Filemoon",
-    "Mixdrop",
-    "Mp4upload",
-    "Streamtape",
-    "Doodstream",
+supported_servers = [
+    "Streamwish",
+    "Mediafire",
 ]
