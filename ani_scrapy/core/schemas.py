@@ -47,7 +47,7 @@ class RelatedInfo:
 
 @dataclass
 class EpisodeInfo:
-    id: str
+    number: int
     anime_id: str
     image_preview: str | None = None
 
@@ -72,5 +72,5 @@ class DownloadLinkInfo:
 
 @dataclass
 class EpisodeDownloadInfo:
-    episode_id: int
+    episode_number: int
     download_links: List[DownloadLinkInfo]

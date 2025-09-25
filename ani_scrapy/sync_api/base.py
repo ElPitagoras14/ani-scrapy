@@ -1,10 +1,12 @@
 from abc import abstractmethod
+from typing import List
 
 from ani_scrapy.core.base import BaseScraper
 from ani_scrapy.core.schemas import (
     AnimeInfo,
     DownloadLinkInfo,
     EpisodeDownloadInfo,
+    EpisodeInfo,
     PagedSearchAnimeInfo,
 )
 from ani_scrapy.sync_api.browser import SyncBrowser
@@ -26,8 +28,18 @@ class SyncBaseScraper(BaseScraper):
         pass
 
     @abstractmethod
+    def get_new_episodes(
+        self,
+        anime_id: str,
+        last_episode_number: int,
+        tab_timeout: int = 200,
+        browser: SyncBrowser | None = None,
+    ) -> List[EpisodeInfo]:
+        pass
+
+    @abstractmethod
     def get_table_download_links(
-        self, anime_id: str, episode_id: int, **kwargs
+        self, anime_id: str, episode_number: int, **kwargs
     ) -> EpisodeDownloadInfo:
         pass
 
@@ -35,7 +47,7 @@ class SyncBaseScraper(BaseScraper):
     def get_iframe_download_links(
         self,
         anime_id: str,
-        episode_id: int,
+        episode_number: int,
         browser: SyncBrowser | None = None,
     ) -> EpisodeDownloadInfo:
         pass

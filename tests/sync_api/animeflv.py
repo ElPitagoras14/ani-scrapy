@@ -6,7 +6,7 @@ episode_id = 7
 
 
 with SyncBrowser(
-    headless=True,
+    headless=False,
 ) as browser:
     scraper = AnimeFlvScraper(verbose=True, level="DEBUG")
     search_results = scraper.search_anime(query=query, page=1)
@@ -14,6 +14,11 @@ with SyncBrowser(
 
     anime_info = scraper.get_anime_info(anime_id=anime_id)
     print(anime_info)
+
+    new_episodes = scraper.get_new_episodes(
+        anime_id=anime_id, last_episode_number=8
+    )
+    print(new_episodes)
 
     table_links = scraper.get_table_download_links(
         anime_id=anime_id, episode_id=episode_id
