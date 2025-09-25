@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List
 import requests
 from ani_scrapy.sync_api.browser import SyncBrowser
 from ani_scrapy.sync_api.scrapers.jkanime.file_link import (
@@ -140,7 +140,7 @@ class JKAnimeScraper(SyncBaseScraper):
         self,
         anime_id: str,
         tab_timeout: int = 200,
-        browser: Optional[SyncBrowser] = None,
+        browser: SyncBrowser = None,
     ) -> AnimeInfo:
         """
         Get information about an anime.
@@ -231,11 +231,12 @@ class JKAnimeScraper(SyncBaseScraper):
             episodes_container = soup.select_one("div#episodes-content")
             episodes = episodes_container.select("div.epcontent")
             for episode in episodes:
-                episode_id = episode.select_one("a")["href"].split("/")[-2]
+                episode_number = episode.select_one("a")["href"].split("/")[-2]
                 image_preview = episode.select_one("a > div")["data-setbg"]
+                number = int(episode_number)
                 all_episodes.append(
                     EpisodeInfo(
-                        id=episode_id,
+                        number=number,
                         anime_id=anime_id,
                         image_preview=image_preview,
                     )
@@ -296,11 +297,97 @@ class JKAnimeScraper(SyncBaseScraper):
             episodes=all_episodes,
         )
 
+    def get_new_episodes(
+        self,
+        anime_id: str,
+        last_episode_number: int,
+        tab_timeout: int = 200,
+        browser: SyncBrowser = None,
+    ) -> List[EpisodeInfo]:
+        """
+        Get the new episodes for an anime.
+
+        Parameters
+        ----------
+        anime_id : str
+            The id of the anime.
+        last_episode_number : int
+            The last episode number to get.
+        tab_timeout : int, optional
+            The timeout for waiting for the tab to load. Defaults to 200.
+        browser : SyncBrowser, optional
+            The browser to use for scraping. If not provided, a new browser
+            will be created.
+
+        Returns
+        -------
+        List[EpisodeInfo]
+            A list of new episode information.
+        """
+
+        url = f"{BASE_URL}/{anime_id}"
+        self._log(f"Getting new episodes for anime with id '{anime_id}'")
+
+        external_browser = browser is not None
+        if not external_browser:
+            browser = SyncBrowser().__enter__()
+
+        page = browser.new_page()
+        page.goto(url)
+
+        select = page.query_selector("div.nice-select.anime__pagination")
+        paged_episodes = select.query_selector_all("ul > li")
+
+        all_episodes = []
+        finished = False
+        for paged_episode in reversed(paged_episodes):
+            select.click()
+
+            page.wait_for_timeout(1000)
+
+            current_tabs = browser.context.pages
+
+            if len(current_tabs) > 1:
+                current_tabs[-1].close()
+                select.click()
+
+            paged_episode.click()
+
+            page.wait_for_timeout(tab_timeout)
+
+            html_text = page.content()
+            soup = BeautifulSoup(html_text, "lxml")
+            episodes_container = soup.select_one("div#episodes-content")
+            episodes = episodes_container.select("div.epcontent")
+            for episode in reversed(episodes):
+                episode_number = episode.select_one("a")["href"].split("/")[-2]
+                image_preview = episode.select_one("a > div")["data-setbg"]
+                number = int(episode_number)
+                if number <= last_episode_number:
+                    finished = True
+                    break
+                all_episodes.append(
+                    EpisodeInfo(
+                        number=number,
+                        anime_id=anime_id,
+                        image_preview=image_preview,
+                    )
+                )
+
+            if finished:
+                break
+
+        page.close()
+        if not external_browser:
+            browser.__exit__(None, None, None)
+
+        return list(reversed(all_episodes))
+
     def get_table_download_links(
         self,
         anime_id: str,
-        episode_id: int,
-        browser: Optional[SyncBrowser] = None,
+        episode_number: int,
+        browser: SyncBrowser = None,
     ) -> EpisodeDownloadInfo:
         """
         Get the table download links for an episode.
@@ -309,7 +396,7 @@ class JKAnimeScraper(SyncBaseScraper):
         ----------
         anime_id : str
             The id of the anime.
-        episode_id : int
+        episode_number : int
             The id of the episode.
         browser : SyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
@@ -321,13 +408,13 @@ class JKAnimeScraper(SyncBaseScraper):
             An object containing the episode id and download links.
         """
 
-        if episode_id < 0:
-            raise ValueError("The variable 'episode_id' must be >= 0")
+        if episode_number < 0:
+            raise ValueError("The variable 'episode_number' must be >= 0")
 
-        url = f"{BASE_URL}/{anime_id}/{episode_id}"
+        url = f"{BASE_URL}/{anime_id}/{episode_number}"
         self._log(
             f"Getting table download links for anime '{anime_id}' "
-            + f"episode {episode_id}"
+            + f"episode {episode_number}"
         )
 
         external_browser = browser is not None
@@ -357,15 +444,15 @@ class JKAnimeScraper(SyncBaseScraper):
             browser.__exit__(None, None, None)
 
         return EpisodeDownloadInfo(
-            episode_id=episode_id,
+            episode_number=episode_number,
             download_links=all_download_links,
         )
 
     def get_iframe_download_links(
         self,
         anime_id: str,
-        episode_id: int,
-        browser: Optional[SyncBrowser] = None,
+        episode_number: int,
+        browser: SyncBrowser = None,
     ) -> EpisodeDownloadInfo:
         """
         Note
@@ -378,7 +465,7 @@ class JKAnimeScraper(SyncBaseScraper):
         ----------
         anime_id : str
             The id of the anime.
-        episode_id : int
+        episode_number : int
             The id of the episode.
         browser : AsyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
@@ -392,9 +479,9 @@ class JKAnimeScraper(SyncBaseScraper):
         Raises
         ------
         TypeError
-            If the anime_id or episode_id is not a string or int, respectively.
+            If the anime_id or episode_number is not a string or int, respectively.
         ValueError
-            If the episode_id is less than 0.
+            If the episode_number is less than 0.
         ScraperBlockedError
             If the request is blocked by the server.
         ScraperTimeoutError
@@ -407,7 +494,7 @@ class JKAnimeScraper(SyncBaseScraper):
     def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
-        browser: Optional[SyncBrowser] = None,
+        browser: SyncBrowser = None,
     ) -> str:
         """
         Get the file download link for a download link info object.

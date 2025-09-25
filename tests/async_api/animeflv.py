@@ -16,6 +16,11 @@ async def main():
         anime_info = await scraper.get_anime_info(anime_id=anime_id)
         print(anime_info)
 
+        new_episodes = await scraper.get_new_episodes(
+            anime_id="one-piece", last_episode_number=1130, browser=browser
+        )
+        print(new_episodes)
+
         table_links = await scraper.get_table_download_links(
             anime_id=anime_id, episode_id=episode_id
         )

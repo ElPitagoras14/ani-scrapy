@@ -1,6 +1,6 @@
 import json
 import aiohttp
-from typing import Optional
+from typing import List, Optional
 from bs4 import BeautifulSoup, Tag
 from datetime import datetime
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
@@ -248,14 +248,15 @@ class AnimeFLVScraper(AsyncBaseScraper):
 
                 anime_thumb_id = info_ids[0]
 
-                for episode, _ in reversed(episodes_data):
+                for episode_number, _ in reversed(episodes_data):
+                    number = int(episode_number)
                     image_prev = (
-                        f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{episode}"
+                        f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{number}"
                         + "/th_3.jpg"
                     )
                     episodes.append(
                         EpisodeInfo(
-                            id=episode,
+                            number=number,
                             anime_id=anime_id,
                             image_preview=image_prev,
                         )
@@ -288,6 +289,65 @@ class AnimeFLVScraper(AsyncBaseScraper):
                         else None
                     ),
                 )
+
+    async def get_new_episodes(
+        self,
+        anime_id: str,
+        last_episode_number: int,
+    ) -> List[EpisodeInfo]:
+        self._log(f"Getting anime info for anime with id '{anime_id}'")
+
+        url = f"{ANIME_URL}/{anime_id}"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 403:
+                    raise ScraperBlockedError(
+                        f"Request failed with status code {response.status}"
+                    )
+                if response.status == 500:
+                    raise ScraperTimeoutError(
+                        f"Request failed with status code {response.status}"
+                    )
+
+                html_text = await response.text()
+                soup = BeautifulSoup(html_text, "lxml")
+
+                info_ids = []
+                episodes_data = []
+                episodes = []
+                for script in soup.find_all("script"):
+                    contents = str(script)
+
+                    if "var anime_info = [" in contents:
+                        anime_info = contents.split("var anime_info = ")[
+                            1
+                        ].split(";")[0]
+                        info_ids = json.loads(anime_info)
+
+                    if "var episodes = [" in contents:
+                        data = contents.split("var episodes = ")[1].split(";")[
+                            0
+                        ]
+                        episodes_data.extend(json.loads(data))
+
+                anime_thumb_id = info_ids[0]
+
+                for episode_number, _ in episodes_data:
+                    number = int(episode_number)
+                    if number <= last_episode_number:
+                        break
+                    image_prev = (
+                        f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{number}"
+                        + "/th_3.jpg"
+                    )
+                    episodes.append(
+                        EpisodeInfo(
+                            number=number,
+                            anime_id=anime_id,
+                            image_preview=image_prev,
+                        )
+                    )
+                return list(reversed(episodes))
 
     async def get_table_download_links(
         self,

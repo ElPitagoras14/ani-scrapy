@@ -20,6 +20,11 @@ async def main():
         )
         print(anime_info)
 
+        new_episodes = await scraper.get_new_episodes(
+            anime_id="one-piece", last_episode_number=1130, browser=browser
+        )
+        print(new_episodes)
+
         table_links = await scraper.get_table_download_links(
             anime_id=anime_id, episode_id=episode_id, browser=browser
         )
@@ -44,26 +49,31 @@ async def main():
         except Exception:
             pass
 
-    # anime_info = await scraper.get_anime_info(anime_id=anime_id)
-    # print(anime_info)
+    anime_info = await scraper.get_anime_info(anime_id=anime_id)
+    print(anime_info)
 
-    # table_links = await scraper.get_table_download_links(
-    #     anime_id=anime_id, episode_id=episode_id
-    # )
-    # print(table_links)
+    new_episodes = await scraper.get_new_episodes(
+        anime_id="one-piece", last_episode_number=1130
+    )
+    print(new_episodes)
 
-    # iframe_links = await scraper.get_iframe_download_links(
-    #     anime_id=anime_id, episode_id=episode_id
-    # )
-    # print(iframe_links)
+    table_links = await scraper.get_table_download_links(
+        anime_id=anime_id, episode_id=episode_id
+    )
+    print(table_links)
 
-    # try:
-    #     file_links = await scraper.get_file_download_link(
-    #         download_info=table_links.download_links[1]
-    #     )
-    #     print(file_links)
-    # except Exception:
-    #     pass
+    iframe_links = await scraper.get_iframe_download_links(
+        anime_id=anime_id, episode_id=episode_id
+    )
+    print(iframe_links)
+
+    try:
+        file_links = await scraper.get_file_download_link(
+            download_info=table_links.download_links[1]
+        )
+        print(file_links)
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
