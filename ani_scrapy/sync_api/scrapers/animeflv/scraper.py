@@ -157,7 +157,9 @@ class AnimeFlvScraper(SyncBaseScraper):
             animes=animes_info,
         )
 
-    def get_anime_info(self, anime_id: str) -> "AnimeInfo":
+    def get_anime_info(
+        self, anime_id: str, include_episodes: bool = True
+    ) -> AnimeInfo:
         """
         Get information about an anime.
 
@@ -227,33 +229,35 @@ class AnimeFlvScraper(SyncBaseScraper):
         episodes_data = []
         episodes = []
 
-        for script in soup.find_all("script"):
-            contents = str(script)
+        if include_episodes:
+            for script in soup.find_all("script"):
+                contents = str(script)
 
-            if "var anime_info = [" in contents:
-                anime_info = contents.split("var anime_info = ")[1].split(";")[
-                    0
-                ]
-                info_ids = json.loads(anime_info)
+                if "var anime_info = [" in contents:
+                    anime_info = contents.split("var anime_info = ")[1].split(
+                        ";"
+                    )[0]
+                    info_ids = json.loads(anime_info)
 
-            if "var episodes = [" in contents:
-                data = contents.split("var episodes = ")[1].split(";")[0]
-                episodes_data.extend(json.loads(data))
+                if "var episodes = [" in contents:
+                    data = contents.split("var episodes = ")[1].split(";")[0]
+                    episodes_data.extend(json.loads(data))
 
-        anime_thumb_id = info_ids[0]
+            anime_thumb_id = info_ids[0]
 
-        for episode_number, _ in reversed(episodes_data):
-            number = int(episode_number)
-            image_prev = (
-                f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{number}/th_3.jpg"
-            )
-            episodes.append(
-                EpisodeInfo(
-                    number=number,
-                    anime_id=anime_id,
-                    image_preview=image_prev,
+            for episode_number, _ in reversed(episodes_data):
+                number = int(episode_number)
+                image_prev = (
+                    f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/"
+                    + f"{number}/th_3.jpg"
                 )
-            )
+                episodes.append(
+                    EpisodeInfo(
+                        number=number,
+                        anime_id=anime_id,
+                        image_preview=image_prev,
+                    )
+                )
 
         rating = soup.select_one("div.Ficha span.vtprmd").text
         is_finished = (
@@ -361,7 +365,7 @@ class AnimeFlvScraper(SyncBaseScraper):
         Raises
         ------
         TypeError
-            If the anime_id or episode_number is not a string or int, respectively.
+            If the anime_id or episode_number is not a string or int.
         ValueError
             If the episode_number is less than 0.
         ScraperBlockedError
@@ -373,7 +377,8 @@ class AnimeFlvScraper(SyncBaseScraper):
         """
         if episode_number < 0:
             raise ValueError(
-                "The variable 'episode_number' must be greater than or equal to 0"
+                "The variable 'episode_number' must be greater "
+                + "than or equal to 0"
             )
 
         self._log(

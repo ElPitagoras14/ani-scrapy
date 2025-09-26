@@ -19,11 +19,11 @@ Abstract base class for async anime scrapers.
 
 - `init(verbose: bool = False, level: str = "INFO") -> None`
 - `search_anime(query: str, **kwargs) -> PagedSearchAnimeInfo`
-- `get_anime_info(anime_id: str, tab_timeout: int = 200, **kwargs) -> AnimeInfo`
-- `get_new_episodes(self, anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: SyncBrowser | None = None,) -> List[EpisodeInfo]`
+- `get_anime_info(anime_id: str, include_episodes: bool = True, tab_timeout: int = 200, **kwargs) -> AnimeInfo`
+- `get_new_episodes(self, anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[SyncBrowser] = None,) -> List[EpisodeInfo]`
 - `get_table_download_links(anime_id: str, episode_number: int, **kwargs) -> EpisodeDownloadInfo`
-- `get_iframe_download_links(anime_id: str, episode_number: int, browser: AsyncBrowser | None = None) -> EpisodeDownloadInfo`
-- `get_file_download_link(download_info: DownloadLinkInfo, browser: AsyncBrowser | None = None) -> str`
+- `get_iframe_download_links(anime_id: str, episode_number: int, browser: Optional[AsyncBrowser] = None) -> EpisodeDownloadInfo`
+- `get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[AsyncBrowser] = None) -> str`
 
 ### SyncBaseScraper
 
@@ -33,11 +33,11 @@ Abstract base class for sync anime scrapers.
 
 - `init(verbose: bool = False, level: str = "INFO") -> None`
 - `search_anime(query: str, **kwargs) -> PagedSearchAnimeInfo`
-- `get_anime_info(anime_id: str, tab_timeout: int = 200, **kwargs) -> AnimeInfo`
-- `get_new_episodes(self, anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: SyncBrowser | None = None,) -> List[EpisodeInfo]`
+- `get_anime_info(anime_id: str, include_episodes: bool = True, tab_timeout: int = 200, **kwargs) -> AnimeInfo`
+- `get_new_episodes(self, anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[SyncBrowser] = None,) -> List[EpisodeInfo]`
 - `get_table_download_links(anime_id: str, episode_number: int, **kwargs) -> EpisodeDownloadInfo`
-- `get_iframe_download_links(anime_id: str, episode_number: int, browser: SyncBrowser | None = None) -> EpisodeDownloadInfo`
-- `get_file_download_link(download_info: DownloadLinkInfo, browser: SyncBrowser | None = None) -> str`
+- `get_iframe_download_links(anime_id: str, episode_number: int, browser: Optional[SyncBrowser] = None) -> EpisodeDownloadInfo`
+- `get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[SyncBrowser] = None) -> str`
 
 **Note:** The synchronous scrapers (`AnimeFLVScraperSync`, `JKAnimeScraperSync`) have identical method signatures and parameters as their async counterparts, but without the `async/await` keywords.
 
@@ -78,7 +78,7 @@ type: _RelatedType
 ```python
 id: str
 anime_id: str
-image_preview: str | None = None
+image_preview: Optional[str] = None
 ```
 
 ### AnimeInfo
@@ -88,19 +88,19 @@ Extends `BaseAnimeInfo` with:
 ```python
 synopsis: str
 is_finished: bool
-rating: str | None = None
+rating: Optional[str] = None
 other_titles: List[str]
 genres: List[str]
 related_info: List[RelatedInfo]
-next_episode_date: datetime | None = None
-episodes: List[EpisodeInfo]
+next_episode_date: Optional[datetime] = None
+episodes: List[Optional[EpisodeInfo]]
 ```
 
 ### DownloadLinkInfo
 
 ```python
 server: str
-url: str | None = None
+url: Optional[str] = None
 ```
 
 ### EpisodeDownloadInfo
@@ -153,9 +153,9 @@ Searches for anime on AnimeFLV.
 ### get_anime_info
 
 ```python
-async def get_anime_info(anime_id: str) -> AnimeInfo
+async def get_anime_info(anime_id: str, include_episodes: bool = True) -> AnimeInfo
 # Synchronous equivalent:
-def get_anime_info(anime_id: str) -> AnimeInfo
+def get_anime_info(anime_id: str, include_episodes: bool = True) -> AnimeInfo
 ```
 
 Gets detailed anime information.
@@ -163,6 +163,7 @@ Gets detailed anime information.
 **Parameters:**
 
 - `anime_id`: Anime identifier
+- `include_episodes`: Include episodes in the returned `AnimeInfo` object (default: True)
 
 **Raises:**
 
@@ -174,9 +175,9 @@ Gets detailed anime information.
 ### get_new_episodes
 
 ```python
-async def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: AsyncBrowser | None = None) -> List[EpisodeInfo]
+async def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[AsyncBrowser] = None) -> List[EpisodeInfo]
 # Synchronous equivalent:
-def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: SyncBrowser | None = None) -> List[EpisodeInfo]
+def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[SyncBrowser] = None) -> List[EpisodeInfo]
 ```
 
 Fetches newly released episodes for an anime starting from the last known episode.
@@ -225,9 +226,9 @@ Gets direct download links from table servers.
 ### get_iframe_download_links
 
 ```python
-async def get_iframe_download_links(anime_id: str, episode_number: int, browser: AsyncBrowser | None = None) -> EpisodeDownloadInfo
+async def get_iframe_download_links(anime_id: str, episode_number: int, browser: Optional[AsyncBrowser] = None) -> EpisodeDownloadInfo
 # Synchronous equivalent:
-def get_iframe_download_links(anime_id: str, episode_number: int, browser: SyncBrowser | None = None) -> EpisodeDownloadInfo
+def get_iframe_download_links(anime_id: str, episode_number: int, browser: Optional[SyncBrowser] = None) -> EpisodeDownloadInfo
 ```
 
 Gets download links from iframe-embedded content (requires browser).
@@ -248,9 +249,9 @@ Gets download links from iframe-embedded content (requires browser).
 ### get_file_download_link
 
 ```python
-async def get_file_download_link(download_info: DownloadLinkInfo, browser: AsyncBrowser | None = None) -> str | None = None
+async def get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[AsyncBrowser] = None) -> Optional[str] = None
 # Synchronous equivalent:
-def get_file_download_link(download_info: DownloadLinkInfo, browser: SyncBrowser | None = None) -> str | None = None
+def get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[SyncBrowser] = None) -> Optional[str] = None
 ```
 
 Resolves final download URLs from intermediate links.
@@ -291,9 +292,9 @@ Searches for anime on JKAnime.
 ### get_anime_info
 
 ```python
-async def get_anime_info(anime_id: str, browser: AsyncBrowser | None = None) -> AnimeInfo
+async def get_anime_info(anime_id: str, include_episodes: bool = True, browser: Optional[AsyncBrowser] = None) -> AnimeInfo
 # Synchronous equivalent:
-def get_anime_info(anime_id: str, browser: SyncBrowser | None = None) -> AnimeInfo
+def get_anime_info(anime_id: str, include_episodes: bool = True, browser: Optional[SyncBrowser] = None) -> AnimeInfo
 ```
 
 Gets detailed anime information (requires browser for JKAnime).
@@ -301,6 +302,7 @@ Gets detailed anime information (requires browser for JKAnime).
 **Parameters:**
 
 - `anime_id`: Anime identifier
+- `include_episodes`: Include episodes in the returned `AnimeInfo` object (default: True)
 - `browser`: Optional browser instance (AsyncBrowser for async, SyncBrowser for sync)
 
 **Raises:**
@@ -313,9 +315,9 @@ Gets detailed anime information (requires browser for JKAnime).
 ### get_new_episodes
 
 ```python
-async def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: AsyncBrowser | None = None) -> List[EpisodeInfo]
+async def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[AsyncBrowser] = None) -> List[EpisodeInfo]
 # Synchronous equivalent:
-def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: SyncBrowser | None = None) -> List[EpisodeInfo]
+def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[SyncBrowser] = None) -> List[EpisodeInfo]
 ```
 
 Fetches newly released episodes for an anime starting from the last known episode.
@@ -342,9 +344,9 @@ Fetches newly released episodes for an anime starting from the last known episod
 ### get_table_download_links
 
 ```python
-async def get_table_download_links(anime_id: str, episode_number: int, browser: AsyncBrowser | None = None) -> EpisodeDownloadInfo
+async def get_table_download_links(anime_id: str, episode_number: int, browser: Optional[AsyncBrowser] = None) -> EpisodeDownloadInfo
 # Synchronous equivalent:
-def get_table_download_links(anime_id: str, episode_number: int, browser: SyncBrowser | None = None) -> EpisodeDownloadInfo
+def get_table_download_links(anime_id: str, episode_number: int, browser: Optional[SyncBrowser] = None) -> EpisodeDownloadInfo
 ```
 
 Gets direct download links from table servers.
@@ -365,9 +367,9 @@ Gets direct download links from table servers.
 ### get_iframe_download_links
 
 ```python
-async def get_iframe_download_links(anime_id: str, episode_number: int, browser: AsyncBrowser | None = None) -> EpisodeDownloadInfo
+async def get_iframe_download_links(anime_id: str, episode_number: int, browser: Optional[AsyncBrowser] = None) -> EpisodeDownloadInfo
 # Synchronous equivalent:
-def get_iframe_download_links(anime_id: str, episode_number: int, browser: SyncBrowser | None = None) -> EpisodeDownloadInfo
+def get_iframe_download_links(anime_id: str, episode_number: int, browser: Optional[SyncBrowser] = None) -> EpisodeDownloadInfo
 ```
 
 _Not supported yet for JKAnime_
@@ -375,9 +377,9 @@ _Not supported yet for JKAnime_
 ### get_file_download_link
 
 ```python
-async def get_file_download_link(download_info: DownloadLinkInfo, browser: AsyncBrowser | None = None) -> str
+async def get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[AsyncBrowser] = None) -> str
 # Synchronous equivalent:
-def get_file_download_link(download_info: DownloadLinkInfo, browser: SyncBrowser | None = None) -> str
+def get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[SyncBrowser] = None) -> str
 ```
 
 Resolves final download URLs from intermediate links.

@@ -96,29 +96,40 @@ async def main():
     print(f"AnimeFLV results: {len(an_results.animes)} animes found")
     print(f"JKAnime results: {len(jk_results.animes)} animes found")
 
-    # Get anime info
-    an_info = await animeflv_scraper.get_anime_info(
-        anime_id=an_results.animes[0].id
-    )
-    jk_info = await jkanime_scraper.get_anime_info(
-        anime_id=jk_results.animes[0].id
-    )
-    print(f"AnimeFLV info: {an_info.title}")
-    print(f"JKAnime info: {jk_info.title}")
 
-    # Get download links (with browser for dynamic content)
+    # Get dynamic content
     async with AsyncBrowser(headless=False) as browser:
+        # Get anime info
+        an_info = await animeflv_scraper.get_anime_info(
+            anime_id=an_results.animes[0].id, include_episodes=True
+        )
+        jk_info = await jkanime_scraper.get_anime_info(
+            anime_id=jk_results.animes[0].id, include_episodes=True, browser=browser
+        )
+        print(f"AnimeFLV info: {an_info.title}")
+        print(f"JKAnime info: {jk_info.title}")
+
+        # Get new episodes
+        an_new_episodes = await animeflv_scraper.get_new_episodes(
+            anime_id=an_info.id, last_episode_number=an_info.episodes[-1].number
+        )
+        jk_new_episodes = await jkanime_scraper.get_new_episodes(
+            anime_id=jk_info.id, last_episode_number=jk_info.episodes[-1].number, browser=browser
+        )
+        print(f"AnimeFLV new episodes: {len(an_new_episodes)} episodes found")
+        print(f"JKAnime new episodes: {len(jk_new_episodes)} episodes found")
+
         # Table download links
         an_table_links = await animeflv_scraper.get_table_download_links(
-            anime_id=an_info.id, episode_id=1
+            anime_id=an_info.id, episode_number=1
         )
         jk_table_links = await jkanime_scraper.get_table_download_links(
-            anime_id=jk_info.id, episode_id=1, browser=browser
+            anime_id=jk_info.id, episode_number=1, browser=browser
         )
 
         # Iframe download links (requires browser for JS content)
         an_iframe_links = await animeflv_scraper.get_iframe_download_links(
-            anime_id=an_info.id, episode_id=1, browser=browser
+            anime_id=an_info.id, episode_number=1, browser=browser
         )
 
         # Get final file download links
@@ -152,26 +163,36 @@ jk_results = jkanime_scraper.search_anime(query="naruto")
 print(f"AnimeFLV results: {len(an_results.animes)} animes found")
 print(f"JKAnime results: {len(jk_results.animes)} animes found")
 
-# Get anime info
 
-an_info = animeflv_scraper.get_anime_info(anime_id=an_results.animes[0].id)
-jk_info = jkanime_scraper.get_anime_info(anime_id=jk_results.animes[0].id)
-print(f"AnimeFLV info: {an_info.title}")
-print(f"JKAnime info: {jk_info.title}")
+# Get dynamic content
+with SyncBrowser(headless=False) as browser:
+    # Get anime info
+    an_info = animeflv_scraper.get_anime_info(anime_id=an_results.animes[0].id)
+    jk_info = jkanime_scraper.get_anime_info(anime_id=jk_results.animes[0].id)
+    print(f"AnimeFLV info: {an_info.title}")
+    print(f"JKAnime info: {jk_info.title}")
 
-# Get download links with browser for dynamic content
+    # Get new episodes
+    an_new_episodes = animeflv_scraper.get_new_episodes(
+        anime_id=an_info.id, last_episode_number=1
+    )
+    jk_new_episodes = jkanime_scraper.get_new_episodes(
+        anime_id=jk_info.id, last_episode_number=1, browser=browser
+    )
+    print(f"AnimeFLV new episodes: {an_new_episodes}")
+    print(f"JKAnime new episodes: {jk_new_episodes}")
 
-with SyncBrowser(headless=False) as browser: # Table download links
+    # Table download links
     an_table_links = animeflv_scraper.get_table_download_links(
-    anime_id=an_info.id, episode_id=1
+    anime_id=an_info.id, episode_number=1
     )
     jk_table_links = jkanime_scraper.get_table_download_links(
-    anime_id=jk_info.id, episode_id=1, browser=browser
+    anime_id=jk_info.id, episode_number=1, browser=browser
     )
 
     # Iframe download links (requires browser for JS content)
     an_iframe_links = animeflv_scraper.get_iframe_download_links(
-        anime_id=an_info.id, episode_id=1, browser=browser
+        anime_id=an_info.id, episode_number=1, browser=browser
     )
 
     # Get final file download links

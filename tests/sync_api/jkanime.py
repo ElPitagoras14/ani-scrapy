@@ -4,18 +4,20 @@ from ani_scrapy.core.constants.jkanime import supported_servers
 
 query = "grand"
 anime_id = "grand-blue-season-2"
-episode_id = 10
+episode_number = 10
 
 
 with SyncBrowser(
-    headless=False,
+    headless=True,
 ) as browser:
     scraper = JKAnimeScraper(verbose=True, level="DEBUG")
 
     search_results = scraper.search_anime(query=query)
     print(search_results)
 
-    anime_info = scraper.get_anime_info(anime_id=anime_id, browser=browser)
+    anime_info = scraper.get_anime_info(
+        anime_id=anime_id, include_episodes=False, browser=browser
+    )
     print(anime_info)
 
     new_episodes = scraper.get_new_episodes(
@@ -24,7 +26,7 @@ with SyncBrowser(
     print(new_episodes)
 
     table_links = scraper.get_table_download_links(
-        anime_id=anime_id, episode_id=episode_id, browser=browser
+        anime_id=anime_id, episode_number=episode_number, browser=browser
     )
     print(table_links)
 
@@ -35,7 +37,7 @@ with SyncBrowser(
             break
 
     iframe_links = scraper.get_iframe_download_links(
-        anime_id=anime_id, episode_id=episode_id, browser=browser
+        anime_id=anime_id, episode_number=episode_number, browser=browser
     )
     print(iframe_links)
 
@@ -57,12 +59,12 @@ new_episodes = scraper.get_new_episodes(
 print(new_episodes)
 
 table_links = scraper.get_table_download_links(
-    anime_id=anime_id, episode_id=episode_id
+    anime_id=anime_id, episode_number=episode_number
 )
 print(table_links)
 
 iframe_links = scraper.get_iframe_download_links(
-    anime_id=anime_id, episode_id=episode_id
+    anime_id=anime_id, episode_number=episode_number
 )
 print(iframe_links)
 
