@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from bs4 import BeautifulSoup, Tag
 from urllib.parse import quote
 from curl_cffi import AsyncSession
@@ -133,8 +133,9 @@ class JKAnimeScraper(AsyncBaseScraper):
     async def get_anime_info(
         self,
         anime_id: str,
+        include_episodes: bool = True,
         tab_timeout: int = 200,
-        browser: AsyncBrowser = None,
+        browser: Optional[AsyncBrowser] = None,
     ) -> AnimeInfo:
         """
         Get information about an anime.
@@ -218,36 +219,39 @@ class JKAnimeScraper(AsyncBaseScraper):
         paged_episodes = await select.query_selector_all("ul > li")
 
         all_episodes = []
-        for paged_episode in paged_episodes:
-            await select.click()
-
-            await page.wait_for_timeout(1000)
-
-            current_tabs = browser.context.pages
-
-            if len(current_tabs) > 1:
-                await current_tabs[-1].close()
+        if include_episodes:
+            for paged_episode in paged_episodes:
                 await select.click()
 
-            await paged_episode.click()
+                await page.wait_for_timeout(1000)
 
-            await page.wait_for_timeout(tab_timeout)
+                current_tabs = browser.context.pages
 
-            html_text = await page.content()
-            soup = BeautifulSoup(html_text, "lxml")
-            episodes_container = soup.select_one("div#episodes-content")
-            episodes = episodes_container.select("div.epcontent")
-            for episode in episodes:
-                episode_number = episode.select_one("a")["href"].split("/")[-2]
-                image_preview = episode.select_one("a > div")["data-setbg"]
-                number = int(episode_number)
-                all_episodes.append(
-                    EpisodeInfo(
-                        number=number,
-                        anime_id=anime_id,
-                        image_preview=image_preview,
+                if len(current_tabs) > 1:
+                    await current_tabs[-1].close()
+                    await select.click()
+
+                await paged_episode.click()
+
+                await page.wait_for_timeout(tab_timeout)
+
+                html_text = await page.content()
+                soup = BeautifulSoup(html_text, "lxml")
+                episodes_container = soup.select_one("div#episodes-content")
+                episodes = episodes_container.select("div.epcontent")
+                for episode in episodes:
+                    episode_number = episode.select_one("a")["href"].split(
+                        "/"
+                    )[-2]
+                    image_preview = episode.select_one("a > div")["data-setbg"]
+                    number = int(episode_number)
+                    all_episodes.append(
+                        EpisodeInfo(
+                            number=number,
+                            anime_id=anime_id,
+                            image_preview=image_preview,
+                        )
                     )
-                )
 
         navbar = await page.query_selector("nav.anime-tabs.mb-4")
         options = await navbar.query_selector_all("ul > li")
@@ -312,7 +316,7 @@ class JKAnimeScraper(AsyncBaseScraper):
         anime_id: str,
         last_episode_number: int,
         tab_timeout: int = 200,
-        browser: AsyncBrowser = None,
+        browser: Optional[AsyncBrowser] = None,
     ) -> List[EpisodeInfo]:
         """
         Get the new episodes for an anime.
@@ -394,7 +398,10 @@ class JKAnimeScraper(AsyncBaseScraper):
         return list(reversed(all_episodes))
 
     async def get_table_download_links(
-        self, anime_id: str, episode_number: int, browser: AsyncBrowser = None
+        self,
+        anime_id: str,
+        episode_number: int,
+        browser: Optional[AsyncBrowser] = None,
     ) -> EpisodeDownloadInfo:
         """
         Get the table download links for an episode.
@@ -417,7 +424,7 @@ class JKAnimeScraper(AsyncBaseScraper):
         Raises
         ------
         TypeError
-            If the anime_id or episode_number is not a string or int, respectively.
+            If the anime_id or episode_number is not a string or int.
         ValueError
             If the episode_number is less than 0.
         ScraperBlockedError
@@ -472,7 +479,7 @@ class JKAnimeScraper(AsyncBaseScraper):
         self,
         anime_id: str,
         episode_number: int,
-        browser: AsyncBrowser = None,
+        browser: Optional[AsyncBrowser] = None,
     ) -> EpisodeDownloadInfo:
         """
         Note
@@ -499,7 +506,7 @@ class JKAnimeScraper(AsyncBaseScraper):
         Raises
         ------
         TypeError
-            If the anime_id or episode_number is not a string or int, respectively.
+            If the anime_id or episode_number is not a string or int.
         ValueError
             If the episode_number is less than 0.
         ScraperBlockedError
@@ -514,8 +521,8 @@ class JKAnimeScraper(AsyncBaseScraper):
     async def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
-        browser: AsyncBrowser = None,
-    ) -> str:
+        browser: Optional[AsyncBrowser] = None,
+    ) -> Optional[str]:
         """
         Get the file download link for a download link info object.
 

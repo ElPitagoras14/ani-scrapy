@@ -4,11 +4,13 @@ from ani_scrapy.async_api import AnimeFLVScraper, AsyncBrowser
 
 query = "grand"
 anime_id = "grand-blue-season-2"
-episode_id = 7
+episode_number = 7
 
 
 async def main():
-    async with AsyncBrowser(headless=True) as browser:
+    async with AsyncBrowser(
+        headless=True,
+    ) as browser:
         scraper = AnimeFLVScraper(verbose=True, level="DEBUG")
         search_results = await scraper.search_anime(query=query, page=1)
         print(search_results)
@@ -22,12 +24,12 @@ async def main():
         print(new_episodes)
 
         table_links = await scraper.get_table_download_links(
-            anime_id=anime_id, episode_id=episode_id
+            anime_id=anime_id, episode_number=episode_number
         )
         print(table_links)
 
         iframe_links = await scraper.get_iframe_download_links(
-            anime_id=anime_id, episode_id=episode_id, browser=browser
+            anime_id=anime_id, episode_number=episode_number, browser=browser
         )
         print(iframe_links)
 
@@ -40,7 +42,7 @@ async def main():
             pass
 
     iframe_links = await scraper.get_iframe_download_links(
-        anime_id=anime_id, episode_id=episode_id
+        anime_id=anime_id, episode_number=episode_number
     )
     print(iframe_links)
 

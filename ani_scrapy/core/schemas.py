@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 
@@ -49,25 +49,25 @@ class RelatedInfo:
 class EpisodeInfo:
     number: int
     anime_id: str
-    image_preview: str | None = None
+    image_preview: Optional[str] = None
 
 
 @dataclass
 class AnimeInfo(BaseAnimeInfo):
     synopsis: str
     is_finished: bool
-    rating: str | None = None
+    rating: Optional[str] = None
     other_titles: List[str] = field(default_factory=list)
     genres: List[str] = field(default_factory=list)
     related_info: List[RelatedInfo] = field(default_factory=list)
-    next_episode_date: datetime | None = None
-    episodes: List[EpisodeInfo] = field(default_factory=list)
+    next_episode_date: Optional[datetime] = None
+    episodes: List[Optional[EpisodeInfo]] = field(default_factory=list)
 
 
 @dataclass
 class DownloadLinkInfo:
     server: str
-    url: str | None = None
+    url: Optional[str] = None
 
 
 @dataclass

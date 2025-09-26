@@ -4,7 +4,7 @@ from ani_scrapy.core.constants.jkanime import supported_servers
 
 query = "grand"
 anime_id = "grand-blue-season-2"
-episode_id = 10
+episode_number = 10
 
 
 async def main():
@@ -26,7 +26,7 @@ async def main():
         print(new_episodes)
 
         table_links = await scraper.get_table_download_links(
-            anime_id=anime_id, episode_id=episode_id, browser=browser
+            anime_id=anime_id, episode_number=episode_number, browser=browser
         )
         print(table_links)
 
@@ -37,7 +37,7 @@ async def main():
                 break
 
         iframe_links = await scraper.get_iframe_download_links(
-            anime_id=anime_id, episode_id=episode_id, browser=browser
+            anime_id=anime_id, episode_number=episode_number, browser=browser
         )
         print(iframe_links)
 
@@ -58,12 +58,12 @@ async def main():
     print(new_episodes)
 
     table_links = await scraper.get_table_download_links(
-        anime_id=anime_id, episode_id=episode_id
+        anime_id=anime_id, episode_number=episode_number
     )
     print(table_links)
 
     iframe_links = await scraper.get_iframe_download_links(
-        anime_id=anime_id, episode_id=episode_id
+        anime_id=anime_id, episode_number=episode_number
     )
     print(iframe_links)
 
