@@ -362,7 +362,7 @@ class JKAnimeScraper(AsyncBaseScraper):
             current_tabs = browser.context.pages
 
             if len(current_tabs) > 1:
-                current_tabs[-1].close()
+                await current_tabs[-1].close()
                 await select.click()
 
             await paged_episode.click()
