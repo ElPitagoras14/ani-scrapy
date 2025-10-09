@@ -13,7 +13,6 @@ CONTEXT_OPTIONS = {
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
     },
-    "ignore_https_errors": True,
     "viewport": {"width": 1080, "height": 720},
 }
 

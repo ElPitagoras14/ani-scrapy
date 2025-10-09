@@ -20,7 +20,7 @@ Abstract base class for async anime scrapers.
 - `init(verbose: bool = False, level: str = "INFO") -> None`
 - `search_anime(query: str, **kwargs) -> PagedSearchAnimeInfo`
 - `get_anime_info(anime_id: str, include_episodes: bool = True, tab_timeout: int = 200, **kwargs) -> AnimeInfo`
-- `get_new_episodes(self, anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[SyncBrowser] = None,) -> List[EpisodeInfo]`
+- `get_new_episodes(self, anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[AsyncBrowser] = None,) -> List[EpisodeInfo]`
 - `get_table_download_links(anime_id: str, episode_number: int, **kwargs) -> EpisodeDownloadInfo`
 - `get_iframe_download_links(anime_id: str, episode_number: int, browser: Optional[AsyncBrowser] = None) -> EpisodeDownloadInfo`
 - `get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[AsyncBrowser] = None) -> str`
@@ -78,6 +78,7 @@ type: _RelatedType
 ```python
 id: str
 anime_id: str
+number: int
 image_preview: Optional[str] = None
 ```
 
@@ -249,9 +250,9 @@ Gets download links from iframe-embedded content (requires browser).
 ### get_file_download_link
 
 ```python
-async def get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[AsyncBrowser] = None) -> Optional[str] = None
+async def get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[AsyncBrowser] = None) -> Optional[str]
 # Synchronous equivalent:
-def get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[SyncBrowser] = None) -> Optional[str] = None
+def get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[SyncBrowser] = None) -> Optional[str]
 ```
 
 Resolves final download URLs from intermediate links.

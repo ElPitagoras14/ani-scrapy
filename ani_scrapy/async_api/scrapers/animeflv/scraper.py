@@ -1,6 +1,5 @@
 import json
 import aiohttp
-from typing import List, Optional
 from bs4 import BeautifulSoup, Tag
 from datetime import datetime
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
@@ -297,7 +296,7 @@ class AnimeFLVScraper(AsyncBaseScraper):
         self,
         anime_id: str,
         last_episode_number: int,
-    ) -> List[EpisodeInfo]:
+    ) -> list[EpisodeInfo]:
         self._log(f"Getting anime info for anime with id '{anime_id}'")
 
         url = f"{ANIME_URL}/{anime_id}"
@@ -332,6 +331,7 @@ class AnimeFLVScraper(AsyncBaseScraper):
                             0
                         ]
                         episodes_data.extend(json.loads(data))
+                print(episodes_data)
 
                 anime_thumb_id = info_ids[0]
 
@@ -437,7 +437,7 @@ class AnimeFLVScraper(AsyncBaseScraper):
         anime_id: str,
         episode_number: int,
         tab_timeout: int = 200,
-        browser: Optional[AsyncBrowser] = None,
+        browser: AsyncBrowser | None = None,
     ) -> EpisodeDownloadInfo:
         """
         Get the iframe download links for an episode.
@@ -557,8 +557,8 @@ class AnimeFLVScraper(AsyncBaseScraper):
     async def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
-        browser: Optional[AsyncBrowser] = None,
-    ) -> Optional[str]:
+        browser: AsyncBrowser | None = None,
+    ) -> str | None:
         """
         Get the file download link for a download link info object.
 

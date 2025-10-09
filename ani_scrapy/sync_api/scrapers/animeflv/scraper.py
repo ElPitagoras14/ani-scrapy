@@ -31,7 +31,6 @@ from ani_scrapy.core.utils.animeflv import get_order_idx
 from ani_scrapy.core.utils.general import clean_related_type, clean_text
 from ani_scrapy.sync_api.base import SyncBaseScraper
 from ani_scrapy.sync_api.browser import SyncBrowser
-from typing import List, Optional
 
 from ani_scrapy.sync_api.scrapers.animeflv.file_link import (
     get_sw_file_link,
@@ -290,7 +289,7 @@ class AnimeFlvScraper(SyncBaseScraper):
         self,
         anime_id: str,
         last_episode_number: int,
-    ) -> List[EpisodeInfo]:
+    ) -> list[EpisodeInfo]:
         self._log(f"Getting anime info for anime with id '{anime_id}'")
 
         url = f"{ANIME_URL}/{anime_id}"
@@ -346,7 +345,7 @@ class AnimeFlvScraper(SyncBaseScraper):
         self,
         anime_id: str,
         episode_number: int,
-    ) -> "EpisodeDownloadInfo":
+    ) -> EpisodeDownloadInfo:
         """
         Get the table download links for an episode.
 
@@ -426,8 +425,8 @@ class AnimeFlvScraper(SyncBaseScraper):
         anime_id: str,
         episode_number: int,
         tab_timeout: int = 200,
-        browser: Optional[SyncBrowser] = None,
-    ) -> "EpisodeDownloadInfo":
+        browser: SyncBrowser | None = None,
+    ) -> EpisodeDownloadInfo:
         """
         Get the iframe download links for an episode.
 
@@ -533,8 +532,8 @@ class AnimeFlvScraper(SyncBaseScraper):
     def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
-        browser: Optional[SyncBrowser] = None,
-    ) -> Optional[str]:
+        browser: SyncBrowser | None = None,
+    ) -> str | None:
         """
         Get the file download link for a download link info object.
 

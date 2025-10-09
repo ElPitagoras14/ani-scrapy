@@ -134,11 +134,11 @@ async def main():
 
         # Get final file download links
         if an_iframe_links.download_links:
-            file_links = await animeflv_scraper.get_file_download_link(
+            file_link = await animeflv_scraper.get_file_download_link(
                 download_info=an_iframe_links.download_links[0],
                 browser=browser,
             )
-            print(f"Download URL: {file_links.url}")
+            print(f"Download URL: {file_link}")
 
 
 if __name__ == "__main__":
@@ -168,7 +168,9 @@ print(f"JKAnime results: {len(jk_results.animes)} animes found")
 with SyncBrowser(headless=False) as browser:
     # Get anime info
     an_info = animeflv_scraper.get_anime_info(anime_id=an_results.animes[0].id)
-    jk_info = jkanime_scraper.get_anime_info(anime_id=jk_results.animes[0].id)
+    jk_info = jkanime_scraper.get_anime_info(
+        anime_id=jk_results.animes[0].id, browser=browser
+    )
     print(f"AnimeFLV info: {an_info.title}")
     print(f"JKAnime info: {jk_info.title}")
 
@@ -197,10 +199,10 @@ with SyncBrowser(headless=False) as browser:
 
     # Get final file download links
     if an_iframe_links.download_links:
-        file_links = animeflv_scraper.get_file_download_link(
+        file_link = animeflv_scraper.get_file_download_link(
             download_info=an_iframe_links.download_links[0], browser=browser
         )
-        print(f"Download URL: {file_links.url}")
+        print(f"Download URL: {file_link}")
 
 ```
 
