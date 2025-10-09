@@ -16,7 +16,7 @@ with SyncBrowser(
     print(search_results)
 
     anime_info = scraper.get_anime_info(
-        anime_id=anime_id, include_episodes=False, browser=browser
+        anime_id=anime_id, include_episodes=True, browser=browser
     )
     print(anime_info)
 

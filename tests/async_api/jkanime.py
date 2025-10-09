@@ -4,7 +4,7 @@ from ani_scrapy.core.constants.jkanime import supported_servers
 
 query = "grand"
 anime_id = "grand-blue-season-2"
-episode_number = 10
+episode_number = 1
 
 
 async def main():

@@ -1,6 +1,6 @@
-from datetime import datetime
-from typing import List, Optional
 import requests
+from datetime import datetime
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from ani_scrapy.sync_api.browser import SyncBrowser
 from ani_scrapy.sync_api.scrapers.jkanime.file_link import (
     get_mediafire_file_link,
@@ -141,7 +141,7 @@ class JKAnimeScraper(SyncBaseScraper):
         anime_id: str,
         include_episodes: bool = True,
         tab_timeout: int = 200,
-        browser: Optional[SyncBrowser] = None,
+        browser: SyncBrowser | None = None,
     ) -> AnimeInfo:
         """
         Get information about an anime.
@@ -198,7 +198,7 @@ class JKAnimeScraper(SyncBaseScraper):
 
         raw_next_episode_date = soup.select("div#proxep")
         parsed_date = None
-        if raw_next_episode_date:
+        if raw_next_episode_date and len(raw_next_episode_date) == 2:
             next_episode_date = raw_next_episode_date[-1].text
             current_year = datetime.now().year
             parts = next_episode_date.strip().split(" ")
@@ -209,24 +209,27 @@ class JKAnimeScraper(SyncBaseScraper):
             ).date()
 
         select = page.query_selector("div.nice-select.anime__pagination")
+        select.wait_for_selector("ul > li", timeout=10000)
         paged_episodes = select.query_selector_all("ul > li")
 
         all_episodes = []
         if include_episodes:
             for paged_episode in paged_episodes:
-                select.click()
-
-                page.wait_for_timeout(1000)
-
-                current_tabs = browser.context.pages
-
-                if len(current_tabs) > 1:
-                    current_tabs[-1].close()
+                try:
+                    with browser.context.expect_page(
+                        timeout=10000
+                    ) as new_page_info:
+                        select.click()
+                    new_page = new_page_info.value
+                    new_page.wait_for_load_state("domcontentloaded")
+                    new_page.close()
                     select.click()
+                except PlaywrightTimeoutError:
+                    pass
 
                 paged_episode.click()
 
-                page.wait_for_timeout(tab_timeout)
+                page.wait_for_timeout(1000 + tab_timeout)
 
                 html_text = page.content()
                 soup = BeautifulSoup(html_text, "lxml")
@@ -248,7 +251,17 @@ class JKAnimeScraper(SyncBaseScraper):
 
         navbar = page.query_selector("nav.anime-tabs.mb-4")
         options = navbar.query_selector_all("ul > li")
-        options[1].click()
+
+        try:
+            with browser.context.expect_page(timeout=10000) as new_page_info:
+                options[1].click()
+            new_page = new_page_info.value
+            new_page.wait_for_load_state("domcontentloaded")
+            new_page.close()
+            select.click()
+        except PlaywrightTimeoutError:
+            pass
+
         html_text = page.content()
         soup = BeautifulSoup(html_text, "lxml")
         other_titles_container = soup.select_one(
@@ -306,8 +319,8 @@ class JKAnimeScraper(SyncBaseScraper):
         anime_id: str,
         last_episode_number: int,
         tab_timeout: int = 200,
-        browser: Optional[SyncBrowser] = None,
-    ) -> List[EpisodeInfo]:
+        browser: SyncBrowser | None = None,
+    ) -> list[EpisodeInfo]:
         """
         Get the new episodes for an anime.
 
@@ -325,7 +338,7 @@ class JKAnimeScraper(SyncBaseScraper):
 
         Returns
         -------
-        List[EpisodeInfo]
+        list[EpisodeInfo]
             A list of new episode information.
         """
 
@@ -340,24 +353,28 @@ class JKAnimeScraper(SyncBaseScraper):
         page.goto(url)
 
         select = page.query_selector("div.nice-select.anime__pagination")
+        select.wait_for_selector("ul > li", timeout=10000)
         paged_episodes = select.query_selector_all("ul > li")
 
         all_episodes = []
         finished = False
         for paged_episode in reversed(paged_episodes):
-            select.click()
 
-            page.wait_for_timeout(1000)
-
-            current_tabs = browser.context.pages
-
-            if len(current_tabs) > 1:
-                current_tabs[-1].close()
+            try:
+                with browser.context.expect_page(
+                    timeout=10000
+                ) as new_page_info:
+                    select.click()
+                new_page = new_page_info.value
+                new_page.wait_for_load_state("domcontentloaded")
+                new_page.close()
                 select.click()
+            except PlaywrightTimeoutError:
+                pass
 
             paged_episode.click()
 
-            page.wait_for_timeout(tab_timeout)
+            page.wait_for_timeout(1000 + tab_timeout)
 
             html_text = page.content()
             soup = BeautifulSoup(html_text, "lxml")
@@ -456,7 +473,7 @@ class JKAnimeScraper(SyncBaseScraper):
         self,
         anime_id: str,
         episode_number: int,
-        browser: Optional[SyncBrowser] = None,
+        browser: SyncBrowser | None = None,
     ) -> EpisodeDownloadInfo:
         """
         Note
@@ -498,8 +515,8 @@ class JKAnimeScraper(SyncBaseScraper):
     def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
-        browser: Optional[SyncBrowser] = None,
-    ) -> Optional[str]:
+        browser: SyncBrowser | None = None,
+    ) -> str | None:
         """
         Get the file download link for a download link info object.
 
@@ -513,7 +530,7 @@ class JKAnimeScraper(SyncBaseScraper):
 
         Returns
         -------
-        str
+        str | None
             The file download link.
         """
 

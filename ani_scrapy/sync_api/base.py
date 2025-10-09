@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from typing import List, Optional
 
 from ani_scrapy.core.base import BaseScraper
 from ani_scrapy.core.schemas import (
@@ -37,8 +36,8 @@ class SyncBaseScraper(BaseScraper):
         anime_id: str,
         last_episode_number: int,
         tab_timeout: int = 200,
-        browser: Optional[SyncBrowser] = None,
-    ) -> List[EpisodeInfo]:
+        browser: SyncBrowser | None = None,
+    ) -> list[EpisodeInfo]:
         pass
 
     @abstractmethod
@@ -52,7 +51,7 @@ class SyncBaseScraper(BaseScraper):
         self,
         anime_id: str,
         episode_number: int,
-        browser: Optional[SyncBrowser] = None,
+        browser: SyncBrowser | None = None,
     ) -> EpisodeDownloadInfo:
         pass
 
@@ -60,6 +59,6 @@ class SyncBaseScraper(BaseScraper):
     def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
-        browser: Optional[SyncBrowser] = None,
-    ) -> Optional[str]:
+        browser: SyncBrowser | None = None,
+    ) -> str | None:
         pass

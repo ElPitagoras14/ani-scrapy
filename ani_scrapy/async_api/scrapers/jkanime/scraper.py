@@ -1,5 +1,5 @@
+import asyncio
 from datetime import datetime
-from typing import List, Optional
 from bs4 import BeautifulSoup, Tag
 from urllib.parse import quote
 from curl_cffi import AsyncSession
@@ -135,7 +135,7 @@ class JKAnimeScraper(AsyncBaseScraper):
         anime_id: str,
         include_episodes: bool = True,
         tab_timeout: int = 200,
-        browser: Optional[AsyncBrowser] = None,
+        browser: AsyncBrowser | None = None,
     ) -> AnimeInfo:
         """
         Get information about an anime.
@@ -205,7 +205,7 @@ class JKAnimeScraper(AsyncBaseScraper):
 
         raw_next_episode_date = soup.select("div#proxep")
         parsed_date = None
-        if raw_next_episode_date:
+        if raw_next_episode_date and len(raw_next_episode_date) == 2:
             next_episode_date = raw_next_episode_date[-1].text
             current_year = datetime.now().year
             parts = next_episode_date.strip().split(" ")
@@ -221,19 +221,24 @@ class JKAnimeScraper(AsyncBaseScraper):
         all_episodes = []
         if include_episodes:
             for paged_episode in paged_episodes:
+                wait_for_new_page = asyncio.create_task(
+                    browser.context.wait_for_event("page")
+                )
                 await select.click()
 
-                await page.wait_for_timeout(1000)
-
-                current_tabs = browser.context.pages
-
-                if len(current_tabs) > 1:
-                    await current_tabs[-1].close()
+                try:
+                    new_page = await asyncio.wait_for(
+                        wait_for_new_page, timeout=10
+                    )
+                    await new_page.wait_for_load_state("domcontentloaded")
+                    await new_page.close()
                     await select.click()
+                except asyncio.TimeoutError:
+                    pass
 
                 await paged_episode.click()
 
-                await page.wait_for_timeout(tab_timeout)
+                await page.wait_for_timeout(1000 + tab_timeout)
 
                 html_text = await page.content()
                 soup = BeautifulSoup(html_text, "lxml")
@@ -255,7 +260,18 @@ class JKAnimeScraper(AsyncBaseScraper):
 
         navbar = await page.query_selector("nav.anime-tabs.mb-4")
         options = await navbar.query_selector_all("ul > li")
+
+        wait_for_new_page = asyncio.create_task(
+            browser.context.wait_for_event("page")
+        )
         await options[1].click()
+
+        try:
+            new_page = await asyncio.wait_for(wait_for_new_page, timeout=10)
+            await new_page.wait_for_load_state("domcontentloaded")
+            await new_page.close()
+        except asyncio.TimeoutError:
+            pass
 
         html_text = await page.content()
         soup = BeautifulSoup(html_text, "lxml")
@@ -316,8 +332,8 @@ class JKAnimeScraper(AsyncBaseScraper):
         anime_id: str,
         last_episode_number: int,
         tab_timeout: int = 200,
-        browser: Optional[AsyncBrowser] = None,
-    ) -> List[EpisodeInfo]:
+        browser: AsyncBrowser | None = None,
+    ) -> list[EpisodeInfo]:
         """
         Get the new episodes for an anime.
 
@@ -335,7 +351,7 @@ class JKAnimeScraper(AsyncBaseScraper):
 
         Returns
         -------
-        List[EpisodeInfo]
+        list[EpisodeInfo]
             A list of new episode information.
         """
 
@@ -350,24 +366,28 @@ class JKAnimeScraper(AsyncBaseScraper):
         await page.goto(url)
 
         select = await page.query_selector("div.nice-select.anime__pagination")
+        await select.wait_for_selector("ul > li", timeout=10000)
         paged_episodes = await select.query_selector_all("ul > li")
 
         all_episodes = []
         finished = False
         for paged_episode in reversed(paged_episodes):
+            wait_for_new_page = asyncio.create_task(
+                browser.context.wait_for_event("page")
+            )
             await select.click()
 
-            await page.wait_for_timeout(1000)
-
-            current_tabs = browser.context.pages
-
-            if len(current_tabs) > 1:
-                await current_tabs[-1].close()
+            try:
+                new_page = await asyncio.wait_for(wait_for_new_page, timeout=10)
+                await new_page.wait_for_load_state("domcontentloaded")
+                await new_page.close()
                 await select.click()
+            except asyncio.TimeoutError:
+                pass
 
             await paged_episode.click()
 
-            await page.wait_for_timeout(tab_timeout)
+            await page.wait_for_timeout(1000 + tab_timeout)
 
             html_text = await page.content()
             soup = BeautifulSoup(html_text, "lxml")
@@ -401,7 +421,7 @@ class JKAnimeScraper(AsyncBaseScraper):
         self,
         anime_id: str,
         episode_number: int,
-        browser: Optional[AsyncBrowser] = None,
+        browser: AsyncBrowser | None = None,
     ) -> EpisodeDownloadInfo:
         """
         Get the table download links for an episode.
@@ -479,7 +499,7 @@ class JKAnimeScraper(AsyncBaseScraper):
         self,
         anime_id: str,
         episode_number: int,
-        browser: Optional[AsyncBrowser] = None,
+        browser: AsyncBrowser | None = None,
     ) -> EpisodeDownloadInfo:
         """
         Note
@@ -521,8 +541,8 @@ class JKAnimeScraper(AsyncBaseScraper):
     async def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
-        browser: Optional[AsyncBrowser] = None,
-    ) -> Optional[str]:
+        browser: AsyncBrowser | None = None,
+    ) -> str | None:
         """
         Get the file download link for a download link info object.
 
@@ -536,7 +556,7 @@ class JKAnimeScraper(AsyncBaseScraper):
 
         Returns
         -------
-        str
+        str | None
             The file download link.
 
         Raises

@@ -1,8 +1,8 @@
 from ani_scrapy.sync_api import AnimeFlvScraper, SyncBrowser
 
 query = "grand"
-anime_id = "grand-blue-season-2"
-episode_number = 7
+anime_id = "one-punch-man-3"
+episode_number = 1
 
 
 with SyncBrowser(
@@ -16,7 +16,7 @@ with SyncBrowser(
     print(anime_info)
 
     new_episodes = scraper.get_new_episodes(
-        anime_id=anime_id, last_episode_number=8
+        anime_id="one-piece-tv", last_episode_number=1130
     )
     print(new_episodes)
 

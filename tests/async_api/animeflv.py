@@ -3,8 +3,8 @@ from ani_scrapy.async_api import AnimeFLVScraper, AsyncBrowser
 
 
 query = "grand"
-anime_id = "grand-blue-season-2"
-episode_number = 7
+anime_id = "one-punch-man-3"
+episode_number = 1
 
 
 async def main():
@@ -19,7 +19,7 @@ async def main():
         print(anime_info)
 
         new_episodes = await scraper.get_new_episodes(
-            anime_id="one-piece", last_episode_number=1130, browser=browser
+            anime_id="one-piece-tv", last_episode_number=1130
         )
         print(new_episodes)
 
