@@ -172,6 +172,8 @@ class JKAnimeScraper(SyncBaseScraper):
         page = browser.new_page()
         page.goto(url)
 
+        page.wait_for_selector("div.col-lg-2.picd")
+
         html_text = page.content()
         soup = BeautifulSoup(html_text, "lxml")
 
@@ -350,7 +352,7 @@ class JKAnimeScraper(SyncBaseScraper):
             browser = SyncBrowser().__enter__()
 
         page = browser.new_page()
-        page.goto(url)
+        page.goto(url, wait_until="domcontentloaded")
 
         select = page.query_selector("div.nice-select.anime__pagination")
         select.wait_for_selector("ul > li", timeout=10000)

@@ -177,7 +177,9 @@ class JKAnimeScraper(AsyncBaseScraper):
             browser = await AsyncBrowser().__aenter__()
 
         page = await browser.new_page()
-        await page.goto(url)
+        await page.goto(url, wait_until="domcontentloaded")
+
+        await page.wait_for_selector("div.col-lg-2.picd")
 
         html_text = await page.content()
         soup = BeautifulSoup(html_text, "lxml")
