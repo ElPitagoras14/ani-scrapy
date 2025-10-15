@@ -217,6 +217,9 @@ class JKAnimeScraper(AsyncBaseScraper):
                 f"{current_year}-{month}-{day}", "%Y-%m-%d"
             ).date()
 
+        await page.wait_for_selector(
+            "div.nice-select.anime__pagination ul > li"
+        )
         select = await page.query_selector("div.nice-select.anime__pagination")
         paged_episodes = await select.query_selector_all("ul > li")
 
@@ -380,7 +383,9 @@ class JKAnimeScraper(AsyncBaseScraper):
             await select.click()
 
             try:
-                new_page = await asyncio.wait_for(wait_for_new_page, timeout=10)
+                new_page = await asyncio.wait_for(
+                    wait_for_new_page, timeout=10
+                )
                 await new_page.wait_for_load_state("domcontentloaded")
                 await new_page.close()
                 await select.click()

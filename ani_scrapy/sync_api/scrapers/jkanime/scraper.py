@@ -210,8 +210,8 @@ class JKAnimeScraper(SyncBaseScraper):
                 f"{current_year}-{month}-{day}", "%Y-%m-%d"
             ).date()
 
+        page.wait_for_selector("div.nice-select.anime__pagination ul > li")
         select = page.query_selector("div.nice-select.anime__pagination")
-        select.wait_for_selector("ul > li", timeout=10000)
         paged_episodes = select.query_selector_all("ul > li")
 
         all_episodes = []
