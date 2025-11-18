@@ -25,7 +25,6 @@ class AsyncBaseScraper(BaseScraper):
         self,
         anime_id: str,
         include_episodes: bool = True,
-        tab_timeout: int = 200,
         **kwargs,
     ) -> AnimeInfo:
         pass

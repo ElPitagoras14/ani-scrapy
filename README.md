@@ -181,8 +181,8 @@ with SyncBrowser(headless=False) as browser:
     jk_new_episodes = jkanime_scraper.get_new_episodes(
         anime_id=jk_info.id, last_episode_number=1, browser=browser
     )
-    print(f"AnimeFLV new episodes: {an_new_episodes}")
-    print(f"JKAnime new episodes: {jk_new_episodes}")
+    print(f"AnimeFLV new episodes: {len(an_new_episodes)} episodes found")
+    print(f"JKAnime new episodes: {len(jk_new_episodes)} episodes found")
 
     # Table download links
     an_table_links = animeflv_scraper.get_table_download_links(
