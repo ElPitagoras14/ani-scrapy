@@ -19,8 +19,8 @@ Abstract base class for async anime scrapers.
 
 - `init(verbose: bool = False, level: str = "INFO") -> None`
 - `search_anime(query: str, **kwargs) -> PagedSearchAnimeInfo`
-- `get_anime_info(anime_id: str, include_episodes: bool = True, tab_timeout: int = 200, **kwargs) -> AnimeInfo`
-- `get_new_episodes(self, anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[AsyncBrowser] = None,) -> List[EpisodeInfo]`
+- `get_anime_info(anime_id: str, include_episodes: bool = True, browser: Optional[AsyncBrowser] = None, **kwargs) -> AnimeInfo`
+- `get_new_episodes(self, anime_id: str, last_episode_number: int, browser: Optional[AsyncBrowser] = None,) -> List[EpisodeInfo]`
 - `get_table_download_links(anime_id: str, episode_number: int, **kwargs) -> EpisodeDownloadInfo`
 - `get_iframe_download_links(anime_id: str, episode_number: int, browser: Optional[AsyncBrowser] = None) -> EpisodeDownloadInfo`
 - `get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[AsyncBrowser] = None) -> str`
@@ -33,8 +33,8 @@ Abstract base class for sync anime scrapers.
 
 - `init(verbose: bool = False, level: str = "INFO") -> None`
 - `search_anime(query: str, **kwargs) -> PagedSearchAnimeInfo`
-- `get_anime_info(anime_id: str, include_episodes: bool = True, tab_timeout: int = 200, **kwargs) -> AnimeInfo`
-- `get_new_episodes(self, anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[SyncBrowser] = None,) -> List[EpisodeInfo]`
+- `get_anime_info(anime_id: str, include_episodes: bool = True, browser: Optional[SyncBrowser] = None, **kwargs) -> AnimeInfo`
+- `get_new_episodes(self, anime_id: str, last_episode_number: int, browser: Optional[SyncBrowser] = None,) -> List[EpisodeInfo]`
 - `get_table_download_links(anime_id: str, episode_number: int, **kwargs) -> EpisodeDownloadInfo`
 - `get_iframe_download_links(anime_id: str, episode_number: int, browser: Optional[SyncBrowser] = None) -> EpisodeDownloadInfo`
 - `get_file_download_link(download_info: DownloadLinkInfo, browser: Optional[SyncBrowser] = None) -> str`
@@ -176,9 +176,9 @@ Gets detailed anime information.
 ### get_new_episodes
 
 ```python
-async def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[AsyncBrowser] = None) -> List[EpisodeInfo]
+async def get_new_episodes(anime_id: str, last_episode_number: int, browser: Optional[AsyncBrowser] = None) -> List[EpisodeInfo]
 # Synchronous equivalent:
-def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[SyncBrowser] = None) -> List[EpisodeInfo]
+def get_new_episodes(anime_id: str, last_episode_number: int, browser: Optional[SyncBrowser] = None) -> List[EpisodeInfo]
 ```
 
 Fetches newly released episodes for an anime starting from the last known episode.
@@ -187,7 +187,6 @@ Fetches newly released episodes for an anime starting from the last known episod
 
 - `anime_id`: Anime identifier.
 - `last_episode_number`: Last known episode number (≥0).
-- `tab_timeout`: Maximum page/tab loading timeout in milliseconds (default: 200).
 - `browser`: Optional browser instance (`AsyncBrowser` for async, `SyncBrowser` for sync).
 
 **Returns:**
@@ -316,9 +315,9 @@ Gets detailed anime information (requires browser for JKAnime).
 ### get_new_episodes
 
 ```python
-async def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[AsyncBrowser] = None) -> List[EpisodeInfo]
+async def get_new_episodes(anime_id: str, last_episode_number: int, browser: Optional[AsyncBrowser] = None) -> List[EpisodeInfo]
 # Synchronous equivalent:
-def get_new_episodes(anime_id: str, last_episode_number: int, tab_timeout: int = 200, browser: Optional[SyncBrowser] = None) -> List[EpisodeInfo]
+def get_new_episodes(anime_id: str, last_episode_number: int, browser: Optional[SyncBrowser] = None) -> List[EpisodeInfo]
 ```
 
 Fetches newly released episodes for an anime starting from the last known episode.
@@ -327,7 +326,6 @@ Fetches newly released episodes for an anime starting from the last known episod
 
 - `anime_id`: Anime identifier.
 - `last_episode_number`: Last known episode number (≥0).
-- `tab_timeout`: Maximum page/tab loading timeout in milliseconds (default: 200).
 - `browser`: Optional browser instance (`AsyncBrowser` for async, `SyncBrowser` for sync).
 
 **Returns:**

@@ -41,6 +41,25 @@ get_file_download_link = {
 }
 
 
+def safe_click(element, browser, reclick=False):
+    ctx = browser.contexts[0]
+
+    try:
+        popup_task = ctx.wait_for_event("page", timeout=5000)
+
+        element.click(force=True)
+
+        popup = popup_task
+        if popup:
+            popup.wait_for_load_state("domcontentloaded", timeout=3000)
+            popup.close()
+    except PlaywrightTimeoutError:
+        pass
+    finally:
+        if reclick:
+            element.click(force=True)
+
+
 class JKAnimeScraper(SyncBaseScraper):
     """
     Sync scraper for jkanime.net.
@@ -140,7 +159,6 @@ class JKAnimeScraper(SyncBaseScraper):
         self,
         anime_id: str,
         include_episodes: bool = True,
-        tab_timeout: int = 200,
         browser: SyncBrowser | None = None,
     ) -> AnimeInfo:
         """
@@ -150,8 +168,6 @@ class JKAnimeScraper(SyncBaseScraper):
         ----------
         anime_id : str
             The id of the anime.
-        tab_timeout : int, optional
-            The timeout for waiting for the tab to load. Defaults to 200.
         browser : SyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
@@ -212,38 +228,47 @@ class JKAnimeScraper(SyncBaseScraper):
 
         page.wait_for_selector("div.nice-select.anime__pagination ul > li")
         select = page.query_selector("div.nice-select.anime__pagination")
-        paged_episodes = select.query_selector_all("ul > li")
+        paged_episodes = select.query_selector_all("ul.list > li")
 
         all_episodes = []
+        idx = 0
+        retries = max(len(paged_episodes), 5)
         if include_episodes:
-            for paged_episode in paged_episodes:
-                try:
-                    with browser.context.expect_page(
-                        timeout=10000
-                    ) as new_page_info:
-                        select.click()
-                    new_page = new_page_info.value
-                    new_page.wait_for_load_state("domcontentloaded")
-                    new_page.close()
-                    select.click()
-                except PlaywrightTimeoutError:
-                    pass
+            while idx < len(paged_episodes):
+                if retries <= 0:
+                    self._log("Retries exceeded, breaking", "WARNING")
+                    break
+                paged_episode = paged_episodes[idx]
+                safe_click(select, browser, reclick=True, timeout=6)
+                safe_click(paged_episode, browser, timeout=3)
+                page_url = page.url
 
-                paged_episode.click()
-
-                page.wait_for_timeout(1000 + tab_timeout)
+                if page_url != url:
+                    self._log("Page URL changed, retrying", "WARNING")
+                    page.close()
+                    page = browser.new_page()
+                    page.goto(url)
+                    page.wait_for_selector(
+                        "div.nice-select.anime__pagination ul > li"
+                    )
+                    select = page.query_selector(
+                        "div.nice-select.anime__pagination"
+                    )
+                    paged_episodes = select.query_selector_all("ul.list > li")
+                    continue
 
                 html_text = page.content()
                 soup = BeautifulSoup(html_text, "lxml")
                 episodes_container = soup.select_one("div#episodes-content")
                 episodes = episodes_container.select("div.epcontent")
+                new_episodes = []
                 for episode in episodes:
                     episode_number = episode.select_one("a")["href"].split(
                         "/"
                     )[-2]
                     image_preview = episode.select_one("a > div")["data-setbg"]
                     number = int(episode_number)
-                    all_episodes.append(
+                    new_episodes.append(
                         EpisodeInfo(
                             number=number,
                             anime_id=anime_id,
@@ -251,18 +276,21 @@ class JKAnimeScraper(SyncBaseScraper):
                         )
                     )
 
+                if (
+                    idx > 0
+                    and new_episodes[-1].number == all_episodes[-1].number
+                ):
+                    self._log("Same paged_episode, trying again", "WARNING")
+                    retries -= 1
+                    continue
+
+                all_episodes.extend(new_episodes)
+                idx += 1
+
         navbar = page.query_selector("nav.anime-tabs.mb-4")
         options = navbar.query_selector_all("ul > li")
 
-        try:
-            with browser.context.expect_page(timeout=10000) as new_page_info:
-                options[1].click()
-            new_page = new_page_info.value
-            new_page.wait_for_load_state("domcontentloaded")
-            new_page.close()
-            select.click()
-        except PlaywrightTimeoutError:
-            pass
+        safe_click(options[1], browser, timeout=5)
 
         html_text = page.content()
         soup = BeautifulSoup(html_text, "lxml")
@@ -320,7 +348,6 @@ class JKAnimeScraper(SyncBaseScraper):
         self,
         anime_id: str,
         last_episode_number: int,
-        tab_timeout: int = 200,
         browser: SyncBrowser | None = None,
     ) -> list[EpisodeInfo]:
         """
@@ -332,8 +359,6 @@ class JKAnimeScraper(SyncBaseScraper):
             The id of the anime.
         last_episode_number : int
             The last episode number to get.
-        tab_timeout : int, optional
-            The timeout for waiting for the tab to load. Defaults to 200.
         browser : SyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
@@ -360,28 +385,37 @@ class JKAnimeScraper(SyncBaseScraper):
 
         all_episodes = []
         finished = False
-        for paged_episode in reversed(paged_episodes):
+        idx = len(paged_episodes) - 1
+        retries = max(len(paged_episodes), 5)
+        while idx >= 0:
+            if retries <= 0:
+                self._log("Retries exceeded, breaking", "WARNING")
+                break
 
-            try:
-                with browser.context.expect_page(
-                    timeout=10000
-                ) as new_page_info:
-                    select.click()
-                new_page = new_page_info.value
-                new_page.wait_for_load_state("domcontentloaded")
-                new_page.close()
-                select.click()
-            except PlaywrightTimeoutError:
-                pass
+            paged_episode = paged_episodes[idx]
+            safe_click(select, browser, reclick=True, timeout=6)
+            safe_click(paged_episode, browser, timeout=3)
+            page_url = page.url
 
-            paged_episode.click()
-
-            page.wait_for_timeout(1000 + tab_timeout)
+            if page_url != url:
+                self._log("Page URL changed, retrying", "WARNING")
+                page.close()
+                page = browser.new_page()
+                page.goto(url)
+                page.wait_for_selector(
+                    "div.nice-select.anime__pagination ul > li"
+                )
+                select = page.query_selector(
+                    "div.nice-select.anime__pagination"
+                )
+                paged_episodes = select.query_selector_all("ul.list > li")
+                continue
 
             html_text = page.content()
             soup = BeautifulSoup(html_text, "lxml")
             episodes_container = soup.select_one("div#episodes-content")
             episodes = episodes_container.select("div.epcontent")
+            new_episodes = []
             for episode in reversed(episodes):
                 episode_number = episode.select_one("a")["href"].split("/")[-2]
                 image_preview = episode.select_one("a > div")["data-setbg"]
@@ -389,13 +423,24 @@ class JKAnimeScraper(SyncBaseScraper):
                 if number <= last_episode_number:
                     finished = True
                     break
-                all_episodes.append(
+                new_episodes.append(
                     EpisodeInfo(
                         number=number,
                         anime_id=anime_id,
                         image_preview=image_preview,
                     )
                 )
+
+            if (
+                idx < len(paged_episodes) - 1
+                and new_episodes[-1].number == all_episodes[-1].number
+            ):
+                self._log("Same paged_episode, retrying", "WARNING")
+                retries -= 1
+                continue
+
+            all_episodes.extend(new_episodes)
+            idx -= 1
 
             if finished:
                 break

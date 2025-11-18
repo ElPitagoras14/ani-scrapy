@@ -1,9 +1,10 @@
 import asyncio
+import time
 from ani_scrapy.async_api import JKAnimeScraper, AsyncBrowser
 from ani_scrapy.core.constants.jkanime import supported_servers
 
 query = "grand"
-anime_id = "grand-blue-season-2"
+anime_id = "steins-gate"
 episode_number = 1
 
 
@@ -18,10 +19,10 @@ async def main():
         anime_info = await scraper.get_anime_info(
             anime_id=anime_id, browser=browser
         )
-        print(anime_info)
+        print(len(anime_info.episodes))
 
         new_episodes = await scraper.get_new_episodes(
-            anime_id="one-piece", last_episode_number=1130, browser=browser
+            anime_id="one-piece", last_episode_number=1100, browser=browser
         )
         print(new_episodes)
 
@@ -77,4 +78,6 @@ async def main():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     asyncio.run(main())
+    print(f"Time taken: {time.time() - start_time} seconds")

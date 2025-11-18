@@ -3,6 +3,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup, Tag
 from urllib.parse import quote
 from curl_cffi import AsyncSession
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from ani_scrapy.async_api.base import AsyncBaseScraper
 from ani_scrapy.async_api.browser import AsyncBrowser
@@ -40,6 +41,28 @@ get_file_download_link = {
     "Streamwish": get_streamwish_file_link,
     "Mediafire": get_mediafire_file_link,
 }
+
+
+async def safe_click(element, browser, reclick=False, timeout=10):
+    ctx = browser.context
+
+    popup_task = asyncio.create_task(ctx.wait_for_event("page"))
+
+    await element.click(force=True)
+
+    popup = None
+    try:
+        popup = await asyncio.wait_for(popup_task, timeout=timeout)
+        await popup.wait_for_load_state("domcontentloaded", timeout=3000)
+        await popup.close()
+    except asyncio.TimeoutError:
+        pass
+    except PlaywrightTimeoutError:
+        if popup:
+            await popup.close()
+    finally:
+        if reclick:
+            await element.click(force=True)
 
 
 class JKAnimeScraper(AsyncBaseScraper):
@@ -134,7 +157,6 @@ class JKAnimeScraper(AsyncBaseScraper):
         self,
         anime_id: str,
         include_episodes: bool = True,
-        tab_timeout: int = 200,
         browser: AsyncBrowser | None = None,
     ) -> AnimeInfo:
         """
@@ -144,8 +166,6 @@ class JKAnimeScraper(AsyncBaseScraper):
         ----------
         anime_id : str
             The id of the anime to get information about.
-        tab_timeout : int, optional
-            The timeout for waiting for the tab to load. Defaults to 200.
         browser : AsyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
@@ -221,41 +241,51 @@ class JKAnimeScraper(AsyncBaseScraper):
             "div.nice-select.anime__pagination ul > li"
         )
         select = await page.query_selector("div.nice-select.anime__pagination")
-        paged_episodes = await select.query_selector_all("ul > li")
+        paged_episodes = await select.query_selector_all("ul.list > li")
 
         all_episodes = []
+        idx = 0
+        retries = max(len(paged_episodes), 5)
         if include_episodes:
-            for paged_episode in paged_episodes:
-                wait_for_new_page = asyncio.create_task(
-                    browser.context.wait_for_event("page")
-                )
-                await select.click()
+            while idx < len(paged_episodes):
+                if retries <= 0:
+                    self._log("Retries exceeded, breaking", "WARNING")
+                    break
 
-                try:
-                    new_page = await asyncio.wait_for(
-                        wait_for_new_page, timeout=10
+                paged_episode = paged_episodes[idx]
+                await safe_click(select, browser, reclick=True, timeout=6)
+                await safe_click(paged_episode, browser, timeout=3)
+                page_url = page.url
+
+                if page_url != url:
+                    self._log("Page URL changed, retrying", "WARNING")
+                    await page.close()
+                    page = await browser.new_page()
+                    await page.goto(url)
+                    await page.wait_for_selector(
+                        "div.nice-select.anime__pagination ul > li"
                     )
-                    await new_page.wait_for_load_state("domcontentloaded")
-                    await new_page.close()
-                    await select.click()
-                except asyncio.TimeoutError:
-                    pass
-
-                await paged_episode.click()
-
-                await page.wait_for_timeout(1000 + tab_timeout)
+                    select = await page.query_selector(
+                        "div.nice-select.anime__pagination"
+                    )
+                    paged_episodes = await select.query_selector_all(
+                        "ul.list > li"
+                    )
+                    continue
 
                 html_text = await page.content()
                 soup = BeautifulSoup(html_text, "lxml")
                 episodes_container = soup.select_one("div#episodes-content")
                 episodes = episodes_container.select("div.epcontent")
+
+                new_episodes = []
                 for episode in episodes:
                     episode_number = episode.select_one("a")["href"].split(
                         "/"
                     )[-2]
                     image_preview = episode.select_one("a > div")["data-setbg"]
                     number = int(episode_number)
-                    all_episodes.append(
+                    new_episodes.append(
                         EpisodeInfo(
                             number=number,
                             anime_id=anime_id,
@@ -263,20 +293,21 @@ class JKAnimeScraper(AsyncBaseScraper):
                         )
                     )
 
+                if (
+                    idx > 0
+                    and new_episodes[-1].number == all_episodes[-1].number
+                ):
+                    self._log("Same paged_episode, retrying", "WARNING")
+                    retries -= 1
+                    continue
+
+                all_episodes.extend(new_episodes)
+                idx += 1
+
         navbar = await page.query_selector("nav.anime-tabs.mb-4")
         options = await navbar.query_selector_all("ul > li")
 
-        wait_for_new_page = asyncio.create_task(
-            browser.context.wait_for_event("page")
-        )
-        await options[1].click()
-
-        try:
-            new_page = await asyncio.wait_for(wait_for_new_page, timeout=10)
-            await new_page.wait_for_load_state("domcontentloaded")
-            await new_page.close()
-        except asyncio.TimeoutError:
-            pass
+        await safe_click(options[1], browser, timeout=5)
 
         html_text = await page.content()
         soup = BeautifulSoup(html_text, "lxml")
@@ -336,7 +367,6 @@ class JKAnimeScraper(AsyncBaseScraper):
         self,
         anime_id: str,
         last_episode_number: int,
-        tab_timeout: int = 200,
         browser: AsyncBrowser | None = None,
     ) -> list[EpisodeInfo]:
         """
@@ -348,8 +378,6 @@ class JKAnimeScraper(AsyncBaseScraper):
             The id of the anime.
         last_episode_number : int
             The last episode number to get.
-        tab_timeout : int, optional
-            The timeout for waiting for the tab to load. Defaults to 200.
         browser : AsyncBrowser, optional
             The browser to use for scraping. If not provided, a new browser
             will be created.
@@ -375,31 +403,40 @@ class JKAnimeScraper(AsyncBaseScraper):
         paged_episodes = await select.query_selector_all("ul > li")
 
         all_episodes = []
+        idx = len(paged_episodes) - 1
+        retries = max(len(paged_episodes), 5)
         finished = False
-        for paged_episode in reversed(paged_episodes):
-            wait_for_new_page = asyncio.create_task(
-                browser.context.wait_for_event("page")
-            )
-            await select.click()
+        while idx >= 0:
+            if retries <= 0:
+                self._log("Retries exceeded, breaking", "WARNING")
+                break
 
-            try:
-                new_page = await asyncio.wait_for(
-                    wait_for_new_page, timeout=10
+            paged_episode = paged_episodes[idx]
+            await safe_click(select, browser, True, timeout=6)
+            await safe_click(paged_episode, browser, timeout=3)
+            page_url = page.url
+
+            if page_url != url:
+                self._log("Page URL changed, retrying", "WARNING")
+                await page.close()
+                page = await browser.new_page()
+                await page.goto(url)
+                await page.wait_for_selector(
+                    "div.nice-select.anime__pagination ul > li"
                 )
-                await new_page.wait_for_load_state("domcontentloaded")
-                await new_page.close()
-                await select.click()
-            except asyncio.TimeoutError:
-                pass
-
-            await paged_episode.click()
-
-            await page.wait_for_timeout(1000 + tab_timeout)
+                select = await page.query_selector(
+                    "div.nice-select.anime__pagination"
+                )
+                paged_episodes = await select.query_selector_all(
+                    "ul.list > li"
+                )
+                continue
 
             html_text = await page.content()
             soup = BeautifulSoup(html_text, "lxml")
             episodes_container = soup.select_one("div#episodes-content")
             episodes = episodes_container.select("div.epcontent")
+            new_episodes = []
             for episode in reversed(episodes):
                 episode_number = episode.select_one("a")["href"].split("/")[-2]
                 image_preview = episode.select_one("a > div")["data-setbg"]
@@ -407,13 +444,25 @@ class JKAnimeScraper(AsyncBaseScraper):
                 if number <= last_episode_number:
                     finished = True
                     break
-                all_episodes.append(
+                new_episodes.append(
                     EpisodeInfo(
                         number=number,
                         anime_id=anime_id,
                         image_preview=image_preview,
                     )
                 )
+
+            if (
+                idx < len(paged_episodes) - 1
+                and new_episodes[-1].number == all_episodes[-1].number
+            ):
+                self._log("Same paged_episode, retrying", "WARNING")
+                retries -= 1
+                continue
+
+            all_episodes.extend(new_episodes)
+
+            idx -= 1
 
             if finished:
                 break
