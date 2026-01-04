@@ -245,7 +245,7 @@ class JKAnimeScraper(AsyncBaseScraper):
 
         all_episodes = []
         idx = 0
-        retries = max(len(paged_episodes), 5)
+        retries = max(int(len(paged_episodes) * 1.5), 5)
         if include_episodes:
             while idx < len(paged_episodes):
                 if retries <= 0:
@@ -253,7 +253,7 @@ class JKAnimeScraper(AsyncBaseScraper):
                     break
 
                 paged_episode = paged_episodes[idx]
-                await safe_click(select, browser, reclick=True, timeout=6)
+                await safe_click(select, browser, reclick=True, timeout=4)
                 await safe_click(paged_episode, browser, timeout=3)
                 page_url = page.url
 
