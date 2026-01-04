@@ -55,13 +55,14 @@ pip install git+https://github.com/ElPitagoras14/ani-scrapy.git
 ```bash
 git clone https://github.com/ElPitagoras14/ani-scrapy.git
 cd ani-scrapy
+pip install -r requirements-dev.txt
 pip install -e .
 playwright install chromium
 ```
 
 ## 🐍 Requirements
 
-- Python >= 3.9 (tested with 3.12)
+- Python >= 3.10.14 (tested with 3.12)
 
 Install Chromium (only once):
 
@@ -149,11 +150,11 @@ if __name__ == "__main__":
 ### Synchronous API Example
 
 ```python
-from ani_scrapy.sync_api import AnimeFLVScraper, JKAnimeScraper, SyncBrowser
+from ani_scrapy.sync_api import AnimeFlvScraper, JKAnimeScraper, SyncBrowser
 
 # Initialize scrapers
 
-animeflv_scraper = AnimeFLVScraper(verbose=True)
+animeflv_scraper = AnimeFlvScraper(verbose=True)
 jkanime_scraper = JKAnimeScraper(verbose=True)
 
 # Search anime
@@ -228,12 +229,22 @@ For complete documentation: [API Reference](https://github.com/ElPitagoras14/ani
 ### Custom Browser Configuration
 
 ```python
-from ani_scrapy import AsyncBrowser, SyncBrowser
+from ani_scrapy.async_api.browser import AsyncBrowser
+from ani_scrapy.sync_api.browser import SyncBrowser
 
 # Custom Brave browser path
 brave_path = ""
 
+# Async browser configuration
 async with AsyncBrowser(
+    headless=False,
+    executable_path=brave_path,
+) as browser:
+    # Your scraping code here
+    pass
+
+# Sync browser configuration
+with SyncBrowser(
     headless=False,
     executable_path=brave_path,
 ) as browser:
@@ -244,13 +255,28 @@ async with AsyncBrowser(
 ### Error Handling Example
 
 ```python
+from ani_scrapy.core.exceptions import (
+    ScraperBlockedError,
+    ScraperTimeoutError,
+    ScraperParseError,
+    ScraperError
+)
+
 try:
     results = await scraper.search_anime("naruto")
     if results.animes:
         anime_info = await scraper.get_anime_info(results.animes[0].id)
         print(f"Success: {anime_info.title}")
+except ScraperBlockedError:
+    print("Access blocked - try again later or use a different IP")
+except ScraperTimeoutError:
+    print("Request timed out - check your connection")
+except ScraperParseError:
+    print("Failed to parse response - website structure may have changed")
+except ScraperError as e:
+    print(f"Scraping error occurred: {e}")
 except Exception as e:
-    print(f"Error occurred: {e}")
+    print(f"Unexpected error: {e}")
     # Implement retry logic or fallback here
 ```
 
@@ -276,7 +302,7 @@ Contributions to Ani-Scrapy are welcome! You can help by:
 - Reporting bugs or suggesting new features via GitHub Issues.
 - Improving documentation.
 - Adding new scrapers or enhancing existing ones.
-- Writing tests to ensure code quality.
+- Ensuring code quality and following coding standards.
 
 ### How to contribute
 
@@ -291,14 +317,20 @@ git checkout -b my-feature
 4. Push your branch to your fork.
 5. Open a Pull Request against the `main` branch of the original repository.
 
-Please ensure that all tests pass before submitting a PR. Contributions are expected to respect the license and coding style.
+Contributions are expected to respect the license and coding style.
 
-## 🧪 Development and Testing
+## 🧪 Development
 
 Install development dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# Code formatting and linting
+black src/ tests/
+isort src/ tests/
+mypy src/
+flake8 src/ tests/
 ```
 
 ## 🚧 Coming Soon
