@@ -213,7 +213,7 @@ class JKAnimeScraper(AsyncBaseScraper):
         is_finished = None
         parsed_date = None
         for l_info in list_info:
-            div = l_info.find("div.enemision")
+            div = l_info.find("div")
             if div:
                 if div.text == "Concluido":
                     is_finished = True
