@@ -238,6 +238,17 @@ class JKAnimeScraper(AsyncBaseScraper):
         title = main_anime_info.find("h3").text
         synopsis = main_anime_info.select_one("p.scroll").text
 
+        raw_next_episode_date = soup.select("div#proxep")
+        if raw_next_episode_date and len(raw_next_episode_date) == 2:
+            next_episode_date = raw_next_episode_date[-1].text
+            current_year = datetime.now().year
+            parts = next_episode_date.strip().split(" ")
+            day = parts[-3]
+            month = month_map[parts[-1]]
+            parsed_date = datetime.strptime(
+                f"{current_year}-{month}-{day}", "%Y-%m-%d"
+            ).date()
+
         await page.wait_for_selector(
             "div.nice-select.anime__pagination ul > li"
         )
