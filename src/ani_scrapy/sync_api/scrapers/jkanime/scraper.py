@@ -200,8 +200,9 @@ class JKAnimeScraper(SyncBaseScraper):
         type_ = anime_type_map.get(list_info[0].text, _AnimeType.TV)
         genres = list_info[1].find_all("a")
         is_finished = None
+        parsed_date = None
         for l_info in list_info:
-            div = l_info.find("div")
+            div = l_info.find("div.enemision")
             if div:
                 if div.text == "Concluido":
                     is_finished = True
@@ -209,22 +210,22 @@ class JKAnimeScraper(SyncBaseScraper):
                 if div.text == "En emision":
                     is_finished = False
                     break
+            span = l_info.find("span")
+            if span:
+                if "Emitido:" in span.text:
+                    _, date = l_info.text.split(":")
+                    date = date.strip()
+                    parts = date.split()
+                    year = parts[-1]
+                    month = month_map[parts[-3]]
+                    day = parts[-5]
+                    parsed_date = datetime.strptime(
+                        f"{year}-{month}-{day}", "%Y-%m-%d"
+                    ).date()
 
         main_anime_info = soup.select_one("div.anime_info")
         title = main_anime_info.find("h3").text
         synopsis = main_anime_info.select_one("p.scroll").text
-
-        raw_next_episode_date = soup.select("div#proxep")
-        parsed_date = None
-        if raw_next_episode_date and len(raw_next_episode_date) == 2:
-            next_episode_date = raw_next_episode_date[-1].text
-            current_year = datetime.now().year
-            parts = next_episode_date.strip().split(" ")
-            day = parts[-3]
-            month = month_map[parts[-1]]
-            parsed_date = datetime.strptime(
-                f"{current_year}-{month}-{day}", "%Y-%m-%d"
-            ).date()
 
         page.wait_for_selector("div.nice-select.anime__pagination ul > li")
         select = page.query_selector("div.nice-select.anime__pagination")
