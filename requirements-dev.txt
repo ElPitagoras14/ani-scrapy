@@ -1,9 +1,0 @@
-# Testing
-pytest
-pytest-asyncio
-
-# Code formatting and linting
-black
-flake8
-isort
-mypy

@@ -1,7 +1,7 @@
 [project]
 name = "ani-scrapy"
-version = "0.1.23"
-description = "Python library for scraping anime websites, currently supporting AnimeFLV and JKAnime."
+version = "0.2.0"
+description = "Async-first Python library for scraping anime websites. Supports AnimeFLV and JKAnime with unified interface, detailed metadata, and download links from multiple servers."
 readme = "README.md"
 requires-python = ">=3.10.14"
 license = { text = "MIT" }
@@ -17,14 +17,20 @@ classifiers = [
 dependencies = [
     "aiohttp>=3.13.0",
     "beautifulsoup4>=4.14.2",
-    "cloudscraper>=1.2.71",
-    "curl-cffi>=0.13.0",
     "loguru>=0.7.3",
     "lxml>=6.0.2",
     "playwright>=1.55.0",
     "playwright-stealth>=2.0.0",
-    "requests>=2.32.5",
+    "rich>=14.3.2",
+    "typer>=0.9.0",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.0.2", "pytest-asyncio>=0.24.0"]
+examples = ["tabulate>=0.9.0", "rich>=13.0.0"]
+
+[project.scripts]
+ani-scrapy = "ani_scrapy.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/ElPitagoras14/ani-scrapy"

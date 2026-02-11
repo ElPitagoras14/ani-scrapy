@@ -6,7 +6,9 @@
 
 <!-- [![Build Status](https://github.com/your_username/py-anime-scraper/actions/workflows/main.yml/badge.svg)](https://github.com/your_username/py-anime-scraper/actions) -->
 
-**Ani-Scrapy** is a Python library for scraping anime websites, designed to provide both synchronous and asynchronous interfaces. It currently supports **AnimeFLV** and **JKAnime**, and makes it easy to switch between different platforms.
+**Ani-Scrapy** is a Python async-first library for scraping anime websites. It currently supports **AnimeFLV** and **JKAnime**, and makes it easy to switch between different platforms.
+
+> **Note**: The synchronous API was removed due to maintainability complexity. Keeping two native implementations duplicated code without sufficient benefits.
 
 Ani-Scrapy helps developers automate anime downloads and build applications. It provides detailed anime and episode information, along with download links from multiple servers, supporting dynamic and static content across several sites.
 
@@ -14,26 +16,26 @@ Ani-Scrapy helps developers automate anime downloads and build applications. It 
 
 ### Core Functionality
 
-- **Dual Interface**: Synchronous and asynchronous APIs for flexible integration.
-- **Multi-Platform Support**: Unified interface for different platforms.
-- **Comprehensive Data**: Detailed anime metadata, episode information, and download links.
+- **Async-First Design**: Built from the ground up for asynchronous Python
+- **Multi-Platform Support**: Unified interface for different platforms
+- **Comprehensive Data**: Detailed anime metadata, episode information, and download links
 
 ### Content Handling
 
-- **Static Content Extraction**: Direct server links using `request + cloudscraper + curl_cffi + aiohttp + bs4`
+- **Static Content Extraction**: Direct server links using `aiohttp` and `BeautifulSoup`
 - **Dynamic Content Processing**: JavaScript-rendered links using `Playwright`
 - **Mixed Approach**: Smart fallback between static and dynamic methods
 
 ### Technical Capabilities
 
 - **Concurrent Scraping**: Built-in support for asynchronous batch processing
-- **Automatic Resource Management**: Browser instances handled automatically when not provided
-- **Custom Browser Support**: Configurable browser paths and headless/headed modes via `executable_path` and `headless` options
+- **Automatic Resource Management**: Browser instances handled automatically
+- **Custom Browser Support**: Configurable browser paths via `executable_path`
 
 ### Development Experience
 
 - **Modular Design**: Easy to extend with new scrapers and platforms
-- **Configurable Logging**: Verbose mode and multiple log levels (`DEBUG`, `INFO`, `SUCCESS`, `WARNING`, `ERROR`)
+- **Structured Logging**: Configurable log levels with task_id tracking for correlated logs
 - **Performance Optimization**: Connection reuse and caching capabilities
 
 ## 📦 Installation
@@ -55,8 +57,7 @@ pip install git+https://github.com/ElPitagoras14/ani-scrapy.git
 ```bash
 git clone https://github.com/ElPitagoras14/ani-scrapy.git
 cd ani-scrapy
-pip install -r requirements-dev.txt
-pip install -e .
+pip install -e ".[dev]"
 playwright install chromium
 ```
 
@@ -64,11 +65,44 @@ playwright install chromium
 
 - Python >= 3.10.14 (tested with 3.12)
 
-Install Chromium (only once):
+Install browser (only once):
 
 ```bash
 playwright install chromium
 ```
+
+> **Recommendation**: Use Brave browser for sites with excessive advertising. See [Custom Browser](#custom-browser-brave-recommended) below.
+
+## 🔍 Diagnostics
+
+Run the diagnostic tool to check your environment:
+
+```bash
+ani-scrapy doctor
+```
+
+This checks:
+
+- Python version, platform, RAM
+- Required dependencies installed
+- Playwright and Chromium available
+- Recommended browsers (Brave)
+- Network connectivity to supported sites
+
+### Options
+
+```bash
+ani-scrapy doctor --output json  # JSON output for CI/CD
+ani-scrapy doctor --timeout 10   # Increase timeout for slow connections
+```
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | All checks passed |
+| 1 | Warnings found |
+| 2 | Errors found |
 
 ## 📊 Supported Websites
 
@@ -79,137 +113,113 @@ playwright install chromium
 
 ## 🚀 Basic Usage
 
-### Asynchronous API Example
+### Simple Example (No task_id required)
 
 ```python
-from ani_scrapy.async_api import AnimeFLVScraper, JKAnimeScraper, AsyncBrowser
 import asyncio
+
+from ani_scrapy import AnimeFLVScraper
 
 
 async def main():
-    # Initialize scrapers
-    animeflv_scraper = AnimeFLVScraper(verbose=True)
-    jkanime_scraper = JKAnimeScraper(verbose=True)
+    async with AnimeFLVScraper() as scraper:
+        results = await scraper.search_anime(query="naruto", page=1)
+        print(f"Found {len(results.animes)} results")
 
-    # Search anime
-    an_results = await animeflv_scraper.search_anime(query="naruto", page=1)
-    jk_results = await jkanime_scraper.search_anime(query="naruto")
-    print(f"AnimeFLV results: {len(an_results.animes)} animes found")
-    print(f"JKAnime results: {len(jk_results.animes)} animes found")
-
-
-    # Get dynamic content
-    async with AsyncBrowser(headless=False) as browser:
-        # Get anime info
-        an_info = await animeflv_scraper.get_anime_info(
-            anime_id=an_results.animes[0].id, include_episodes=True
-        )
-        jk_info = await jkanime_scraper.get_anime_info(
-            anime_id=jk_results.animes[0].id, include_episodes=True, browser=browser
-        )
-        print(f"AnimeFLV info: {an_info.title}")
-        print(f"JKAnime info: {jk_info.title}")
-
-        # Get new episodes
-        an_new_episodes = await animeflv_scraper.get_new_episodes(
-            anime_id=an_info.id, last_episode_number=an_info.episodes[-1].number
-        )
-        jk_new_episodes = await jkanime_scraper.get_new_episodes(
-            anime_id=jk_info.id, last_episode_number=jk_info.episodes[-1].number, browser=browser
-        )
-        print(f"AnimeFLV new episodes: {len(an_new_episodes)} episodes found")
-        print(f"JKAnime new episodes: {len(jk_new_episodes)} episodes found")
-
-        # Table download links
-        an_table_links = await animeflv_scraper.get_table_download_links(
-            anime_id=an_info.id, episode_number=1
-        )
-        jk_table_links = await jkanime_scraper.get_table_download_links(
-            anime_id=jk_info.id, episode_number=1, browser=browser
-        )
-
-        # Iframe download links (requires browser for JS content)
-        an_iframe_links = await animeflv_scraper.get_iframe_download_links(
-            anime_id=an_info.id, episode_number=1, browser=browser
-        )
-
-        # Get final file download links
-        if an_iframe_links.download_links:
-            file_link = await animeflv_scraper.get_file_download_link(
-                download_info=an_iframe_links.download_links[0],
-                browser=browser,
-            )
-            print(f"Download URL: {file_link}")
+        info = await scraper.get_anime_info(anime_id=results.animes[0].id)
+        print(f"Title: {info.title}")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
-
 ```
 
-### Synchronous API Example
+### Advanced Example (With task_id for log correlation)
 
 ```python
-from ani_scrapy.sync_api import AnimeFlvScraper, JKAnimeScraper, SyncBrowser
+import asyncio
 
-# Initialize scrapers
-
-animeflv_scraper = AnimeFlvScraper(verbose=True)
-jkanime_scraper = JKAnimeScraper(verbose=True)
-
-# Search anime
-
-an_results = animeflv_scraper.search_anime(query="naruto", page=1)
-jk_results = jkanime_scraper.search_anime(query="naruto")
-print(f"AnimeFLV results: {len(an_results.animes)} animes found")
-print(f"JKAnime results: {len(jk_results.animes)} animes found")
+from ani_scrapy import AnimeFLVScraper, JKAnimeScraper
+from ani_scrapy.core.base import generate_task_id
 
 
-# Get dynamic content
-with SyncBrowser(headless=False) as browser:
-    # Get anime info
-    an_info = animeflv_scraper.get_anime_info(anime_id=an_results.animes[0].id)
-    jk_info = jkanime_scraper.get_anime_info(
-        anime_id=jk_results.animes[0].id, browser=browser
-    )
-    print(f"AnimeFLV info: {an_info.title}")
-    print(f"JKAnime info: {jk_info.title}")
+async def main():
+    # Custom task_id for log correlation (or use generate_task_id())
+    task_id = generate_task_id()
 
-    # Get new episodes
-    an_new_episodes = animeflv_scraper.get_new_episodes(
-        anime_id=an_info.id, last_episode_number=1
-    )
-    jk_new_episodes = jkanime_scraper.get_new_episodes(
-        anime_id=jk_info.id, last_episode_number=1, browser=browser
-    )
-    print(f"AnimeFLV new episodes: {len(an_new_episodes)} episodes found")
-    print(f"JKAnime new episodes: {len(jk_new_episodes)} episodes found")
+    async with AnimeFLVScraper() as animeflv_scraper:
+        an_results = await animeflv_scraper.search_anime(query="naruto", page=1, task_id=task_id)
+        print(f"AnimeFLV results: {len(an_results.animes)} animes found")
 
-    # Table download links
-    an_table_links = animeflv_scraper.get_table_download_links(
-    anime_id=an_info.id, episode_number=1
-    )
-    jk_table_links = jkanime_scraper.get_table_download_links(
-    anime_id=jk_info.id, episode_number=1, browser=browser
-    )
-
-    # Iframe download links (requires browser for JS content)
-    an_iframe_links = animeflv_scraper.get_iframe_download_links(
-        anime_id=an_info.id, episode_number=1, browser=browser
-    )
-
-    # Get final file download links
-    if an_iframe_links.download_links:
-        file_link = animeflv_scraper.get_file_download_link(
-            download_info=an_iframe_links.download_links[0], browser=browser
+        an_info = await animeflv_scraper.get_anime_info(
+            anime_id=an_results.animes[0].id, include_episodes=True, task_id=task_id
         )
-        print(f"Download URL: {file_link}")
+        print(f"AnimeFLV info: {an_info.title}")
 
+        an_table_links = await animeflv_scraper.get_table_download_links(
+            anime_id=an_info.id, episode_number=1, task_id=task_id
+        )
+        print(f"AnimeFLV table links: {len(an_table_links.download_links)}")
+
+    async with JKAnimeScraper() as jkanime_scraper:
+        jk_results = await jkanime_scraper.search_anime(query="naruto", task_id=task_id)
+        print(f"JKAnime results: {len(jk_results.animes)} animes found")
+
+        jk_info = await jkanime_scraper.get_anime_info(
+            anime_id=jk_results.animes[0].id, include_episodes=True, task_id=task_id
+        )
+        print(f"JKAnime info: {jk_info.title}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Note**: The `task_id` parameter is optional. If not provided, a random ID is generated automatically. Use it to correlate logs across multiple operations.
+
+## Custom Browser (Brave Recommended)
+
+You can configure a custom browser executable path. Brave is recommended because its native ad-blocker reduces blocking on sites with excessive advertisements, but any Chromium-based browser (Chrome, Chromium, Edge) will work.
+
+### Benefits of Brave
+
+- **Native Ad-Block**: Built-in protection reduces detection probability
+- **Avoids Captchas**: Sites with aggressive ads may fail with Chromium's default configuration
+- **Better Success Rate**: Sites with excessive advertising can fail or timeout with the default browser
+
+### Configuration
+
+```python
+from ani_scrapy import AnimeFLVScraper
+
+brave_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+
+async with AnimeFLVScraper(executable_path=brave_path) as scraper:
+    info = await scraper.get_anime_info(anime_id="anime-id")
+```
+
+### Path Examples
+
+```python
+# Brave (Recommended)
+brave_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+
+# Chrome
+chrome_path = "C:/Program Files/Google/Chrome/Application/chrome.exe"
+
+# Chromium
+chromium_path = "C:/Program Files/Chromium/Application/chrome.exe"
+
+# Linux
+brave_path = "/usr/bin/brave"
+
+# macOS
+brave_path = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
 ```
 
 ## 📖 API Reference
 
-For complete documentation: [API Reference](https://github.com/ElPitagoras14/ani-scrapy/blob/main/docs/API_REFERENCE.md)
+For complete documentation: [Docs index](https://github.com/ElPitagoras14/ani-scrapy/blob/main/docs/README.md)
 
 ### Methods Overview:
 
@@ -218,41 +228,41 @@ For complete documentation: [API Reference](https://github.com/ElPitagoras14/ani
 - `get_table_download_links` - Get direct server links
 - `get_iframe_download_links` - Get iframe links
 - `get_file_download_link` - Get final download URL
+- `get_new_episodes` - Get new episodes since last known
+
+### Scraper Classes:
+
+- `AnimeFLVScraper` - Scraper for AnimeFLV
+- `JKAnimeScraper` - Scraper for JKAnime
 
 ### Browser Classes:
 
-- `AsyncBrowser` - Automatic resource management for async operations
-- `SyncBrowser` - Context manager for synchronous scraping
+- `AsyncBrowser` - Manual browser control for advanced use cases
 
 ## 🛠️ Advanced Usage
 
-### Custom Browser Configuration
+### Manual Browser Usage
+
+For advanced use cases where you need direct control over the browser:
 
 ```python
-from ani_scrapy.async_api.browser import AsyncBrowser
-from ani_scrapy.sync_api.browser import SyncBrowser
+import asyncio
 
-# Custom Brave browser path
-brave_path = ""
+from ani_scrapy import AsyncBrowser
 
-# Async browser configuration
-async with AsyncBrowser(
-    headless=False,
-    executable_path=brave_path,
-) as browser:
-    # Your scraping code here
-    pass
 
-# Sync browser configuration
-with SyncBrowser(
-    headless=False,
-    executable_path=brave_path,
-) as browser:
-    # Your scraping code here
-    pass
+async def main():
+    async with AsyncBrowser(headless=True) as browser:
+        page = await browser.new_page()
+        await page.goto("https://example.com")
+        # Your custom browser automation here
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-### Error Handling Example
+### Error Handling
 
 ```python
 from ani_scrapy.core.exceptions import (
@@ -277,7 +287,6 @@ except ScraperError as e:
     print(f"Scraping error occurred: {e}")
 except Exception as e:
     print(f"Unexpected error: {e}")
-    # Implement retry logic or fallback here
 ```
 
 ### Concurrent Scraping
@@ -285,7 +294,7 @@ except Exception as e:
 ```python
 import asyncio
 
-async def scrape_multiple_animes(anime_ids):
+async def scrape_multiple_animes(anime_ids, scraper):
     tasks = []
     for anime_id in anime_ids:
         task = scraper.get_anime_info(anime_id)
@@ -324,13 +333,7 @@ Contributions are expected to respect the license and coding style.
 Install development dependencies:
 
 ```bash
-pip install -r requirements-dev.txt
-
-# Code formatting and linting
-black src/ tests/
-isort src/ tests/
-mypy src/
-flake8 src/ tests/
+pip install -e ".[dev]"
 ```
 
 ## 🚧 Coming Soon
