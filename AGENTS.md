@@ -41,6 +41,10 @@ pytest tests/ -k "test_name"              # run tests matching pattern
 
 ## Code Style Guidelines
 
+### Package Management
+
+- Use `uv` for package management
+
 ### Imports
 
 - Group imports in this order: standard library, third-party, local application
