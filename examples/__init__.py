@@ -9,15 +9,13 @@ Usage:
     ...
 
 All examples use AnimeFLV and JKAnime scrapers with proper logging
-and task tracking configuration.
+configuration.
 """
 
 from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AsyncBrowser
-from ani_scrapy.core.base import generate_task_id
 
 __all__ = [
     "AnimeFLVScraper",
     "JKAnimeScraper",
     "AsyncBrowser",
-    "generate_task_id",
 ]

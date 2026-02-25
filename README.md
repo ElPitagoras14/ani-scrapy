@@ -35,7 +35,7 @@ Ani-Scrapy helps developers automate anime downloads and build applications. It 
 ### Development Experience
 
 - **Modular Design**: Easy to extend with new scrapers and platforms
-- **Structured Logging**: Configurable log levels with task_id tracking for correlated logs
+- **Logging**: Uses Loguru; respects global configuration
 - **Performance Optimization**: Connection reuse and caching capabilities
 
 ## 📦 Installation
@@ -98,84 +98,47 @@ ani-scrapy doctor --timeout 10   # Increase timeout for slow connections
 
 ### Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | All checks passed |
-| 1 | Warnings found |
-| 2 | Errors found |
+| Code | Meaning           |
+| ---- | ----------------- |
+| 0    | All checks passed |
+| 1    | Warnings found    |
+| 2    | Errors found      |
 
-## 📊 Supported Websites
+## 📝 Logging
 
-### Currently Supported
+Ani-Scrapy uses **Loguru** for all logging. The library does **not** configure Loguru automatically - you must configure it in your application if you want custom logging.
 
-- **AnimeFLV**: Full support
-- **JKAnime**: Supports search, info, table downloads, file downloads | ~~iframe downloads~~
+### Basic Usage (No Configuration)
 
-## 🚀 Basic Usage
-
-### Simple Example (No task_id required)
+By default, all logs go to stderr using Loguru's default configuration:
 
 ```python
-import asyncio
-
 from ani_scrapy import AnimeFLVScraper
 
-
-async def main():
-    async with AnimeFLVScraper() as scraper:
-        results = await scraper.search_anime(query="naruto", page=1)
-        print(f"Found {len(results.animes)} results")
-
-        info = await scraper.get_anime_info(anime_id=results.animes[0].id)
-        print(f"Title: {info.title}")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+async with AnimeFLVScraper() as scraper:
+    await scraper.search_anime("naruto")
+# Logs appear on stderr automatically
 ```
 
-### Advanced Example (With task_id for log correlation)
+### Configure Loguru in Your Application
+
+For production applications, configure Loguru once at startup:
 
 ```python
-import asyncio
+from loguru import logger
+import sys
 
-from ani_scrapy import AnimeFLVScraper, JKAnimeScraper
-from ani_scrapy.core.base import generate_task_id
+# Configure globally
+logger.configure(
+    handlers=[
+        {"sink": "app.log", "level": "DEBUG", "enqueue": True},
+        {"sink": sys.stderr, "level": "INFO"},
+    ]
+)
 
-
-async def main():
-    # Custom task_id for log correlation (or use generate_task_id())
-    task_id = generate_task_id()
-
-    async with AnimeFLVScraper() as animeflv_scraper:
-        an_results = await animeflv_scraper.search_anime(query="naruto", page=1, task_id=task_id)
-        print(f"AnimeFLV results: {len(an_results.animes)} animes found")
-
-        an_info = await animeflv_scraper.get_anime_info(
-            anime_id=an_results.animes[0].id, include_episodes=True, task_id=task_id
-        )
-        print(f"AnimeFLV info: {an_info.title}")
-
-        an_table_links = await animeflv_scraper.get_table_download_links(
-            anime_id=an_info.id, episode_number=1, task_id=task_id
-        )
-        print(f"AnimeFLV table links: {len(an_table_links.download_links)}")
-
-    async with JKAnimeScraper() as jkanime_scraper:
-        jk_results = await jkanime_scraper.search_anime(query="naruto", task_id=task_id)
-        print(f"JKAnime results: {len(jk_results.animes)} animes found")
-
-        jk_info = await jkanime_scraper.get_anime_info(
-            anime_id=jk_results.animes[0].id, include_episodes=True, task_id=task_id
-        )
-        print(f"JKAnime info: {jk_info.title}")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# All scrapers will use this configuration
+from ani_scrapy import AnimeFLVScraper
 ```
-
-**Note**: The `task_id` parameter is optional. If not provided, a random ID is generated automatically. Use it to correlate logs across multiple operations.
 
 ## Custom Browser (Brave Recommended)
 

@@ -1,6 +1,6 @@
 [project]
 name = "ani-scrapy"
-version = "0.2.2"
+version = "0.3.0"
 description = "Async-first Python library for scraping anime websites. Supports AnimeFLV and JKAnime with unified interface, detailed metadata, and download links from multiple servers."
 readme = "README.md"
 requires-python = ">=3.10.14"
@@ -15,14 +15,14 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "aiohttp>=3.13.0",
-    "beautifulsoup4>=4.14.2",
-    "loguru>=0.7.3",
-    "lxml>=6.0.2",
-    "playwright>=1.55.0",
-    "playwright-stealth>=2.0.0",
-    "rich>=14.3.2",
-    "typer>=0.9.0",
+  "aiohttp>=3.13.0",
+  "beautifulsoup4>=4.14.2",
+  "loguru>=0.7.3",
+  "lxml>=6.0.2",
+  "playwright>=1.55.0",
+  "playwright-stealth>=2.0.0",
+  "rich>=14.3.2",
+  "typer>=0.9.0",
 ]
 
 [project.optional-dependencies]

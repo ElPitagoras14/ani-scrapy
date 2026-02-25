@@ -15,7 +15,6 @@ from rich.panel import Panel
 from rich import print as rprint
 
 from ani_scrapy import JKAnimeScraper
-from ani_scrapy.core.base import generate_task_id
 
 BRAVE_PATH = (
     r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
@@ -28,11 +27,7 @@ async def main():
     """Run the browser usage example."""
     rprint("[bold cyan]=== Example 04: Browser Usage[/bold cyan]\n")
 
-    task_id = generate_task_id()
-    rprint(f"[dim]Task ID: {task_id}[/dim]\n")
-
     async with JKAnimeScraper(
-        level="DEBUG",
         headless=True,
         executable_path=BRAVE_PATH,
     ) as scraper:
@@ -42,9 +37,7 @@ async def main():
 
         rprint("[dim]Browser started...[/dim]")
         start = time.perf_counter()
-        anime_info = await scraper.get_anime_info(
-            anime_id=anime_id, task_id=task_id
-        )
+        anime_info = await scraper.get_anime_info(anime_id=anime_id)
         elapsed = time.perf_counter() - start
         rprint("[dim]Browser closed[/dim]")
 

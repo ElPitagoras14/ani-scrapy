@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example 09: File Download Links
+Example 08: File Download Links
 
 Demonstrates how to get final download URLs from download link info:
 - Resolving Streamwish links
@@ -15,7 +15,6 @@ from rich.table import Table
 from rich import print as rprint
 
 from ani_scrapy.jkanime import JKAnimeScraper
-from ani_scrapy.core.base import generate_task_id
 
 BRAVE_PATH = (
     r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
@@ -28,11 +27,7 @@ async def main():
     """Run the file download links example."""
     rprint("[bold cyan]=== Example 09: File Download Links[/bold cyan]\n")
 
-    task_id = generate_task_id()
-    rprint(f"[dim]Task ID: {task_id}[/dim]\n")
-
     async with JKAnimeScraper(
-        level="INFO",
         headless=True,
         executable_path=BRAVE_PATH,
     ) as scraper:
@@ -50,7 +45,7 @@ async def main():
         )
         start = time.perf_counter()
         table_links = await scraper.get_table_download_links(
-            anime_id=anime_id, episode_number=episode_number, task_id=task_id
+            anime_id=anime_id, episode_number=episode_number
         )
         elapsed = time.perf_counter() - start
 
@@ -95,7 +90,7 @@ async def main():
 
             try:
                 final_url = await scraper.get_file_download_link(
-                    download_info=link, task_id=task_id
+                    download_info=link
                 )
                 elapsed_link = time.perf_counter() - start_link
 

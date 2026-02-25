@@ -3,7 +3,7 @@
 Example 01: Basic Anime Search
 
 Demonstrates how to search for anime using both AnimeFLV and JKAnime scrapers.
-Shows how to use task_id for log correlation and format results with tabulate.
+Shows how to configure Loguru for logging (users must configure Loguru themselves).
 """
 
 import asyncio
@@ -13,7 +13,6 @@ from rich.table import Table
 from rich import print as rprint
 
 from ani_scrapy import AnimeFLVScraper, JKAnimeScraper
-from ani_scrapy.core.base import generate_task_id
 
 console = Console()
 
@@ -22,18 +21,13 @@ async def main():
     """Run the basic search example."""
     rprint("[bold cyan]=== Example 01: Basic Anime Search[/bold cyan]\n")
 
-    task_id = generate_task_id()
-    rprint(f"[dim]Task ID: {task_id}[/dim]\n")
-
     query = "naruto"
     rprint(f"[bold]Searching for:[/bold] '{query}'\n")
 
-    async with AnimeFLVScraper(level="DEBUG") as scraper_flv:
+    async with AnimeFLVScraper() as scraper_flv:
         rprint("[bold yellow]AnimeFLV:[/bold yellow]")
         start_flv = time.perf_counter()
-        results_flv = await scraper_flv.search_anime(
-            query=query, task_id=task_id
-        )
+        results_flv = await scraper_flv.search_anime(query=query)
         elapsed_flv = time.perf_counter() - start_flv
 
         table = Table(title="AnimeFLV Results")
@@ -54,12 +48,10 @@ async def main():
             + f"AnimeFLV[/green] ({elapsed_flv:.2f}s)"
         )
 
-    async with JKAnimeScraper(level="DEBUG") as scraper_jk:
+    async with JKAnimeScraper() as scraper_jk:
         rprint("\n[bold yellow]JKAnime:[/bold yellow]")
         start_jk = time.perf_counter()
-        results_jk = await scraper_jk.search_anime(
-            query=query, task_id=task_id
-        )
+        results_jk = await scraper_jk.search_anime(query=query)
         elapsed_jk = time.perf_counter() - start_jk
 
         table2 = Table(title="JKAnime Results")

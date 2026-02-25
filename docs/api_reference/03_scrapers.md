@@ -13,7 +13,7 @@ from ani_scrapy import AnimeFLVScraper
 #### search_anime
 
 ```python
-async def search_anime(query: str, page: int = 1, task_id: str | None = None) -> PagedSearchAnimeInfo
+async def search_anime(query: str, page: int = 1) -> PagedSearchAnimeInfo
 ```
 
 Searches for anime on AnimeFLV.
@@ -22,7 +22,6 @@ Searches for anime on AnimeFLV.
 
 - `query`: Search term (min 3 characters)
 - `page`: Page number (default: 1)
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Raises:**
 
@@ -34,7 +33,7 @@ Searches for anime on AnimeFLV.
 #### get_anime_info
 
 ```python
-async def get_anime_info(anime_id: str, include_episodes: bool = True, task_id: str | None = None) -> AnimeInfo
+async def get_anime_info(anime_id: str, include_episodes: bool = True) -> AnimeInfo
 ```
 
 Gets detailed anime information.
@@ -43,7 +42,6 @@ Gets detailed anime information.
 
 - `anime_id`: Anime identifier
 - `include_episodes`: Include episodes in the returned `AnimeInfo` object (default: True)
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Raises:**
 
@@ -55,7 +53,7 @@ Gets detailed anime information.
 #### get_new_episodes
 
 ```python
-async def get_new_episodes(anime_id: str, last_episode_number: int, task_id: str | None = None) -> list[EpisodeInfo]
+async def get_new_episodes(anime_id: str, last_episode_number: int) -> list[EpisodeInfo]
 ```
 
 Fetches newly released episodes for an anime starting from the last known episode.
@@ -64,7 +62,6 @@ Fetches newly released episodes for an anime starting from the last known episod
 
 - `anime_id`: Anime identifier.
 - `last_episode_number`: Last known episode number (≥0).
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Returns:**
 
@@ -81,7 +78,7 @@ Fetches newly released episodes for an anime starting from the last known episod
 #### get_table_download_links
 
 ```python
-async def get_table_download_links(anime_id: str, episode_number: int, task_id: str | None = None) -> EpisodeDownloadInfo
+async def get_table_download_links(anime_id: str, episode_number: int) -> EpisodeDownloadInfo
 ```
 
 Gets direct download links from table servers.
@@ -90,7 +87,6 @@ Gets direct download links from table servers.
 
 - `anime_id`: Anime identifier
 - `episode_number`: Episode number (≥0)
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Raises:**
 
@@ -102,7 +98,7 @@ Gets direct download links from table servers.
 #### get_iframe_download_links
 
 ```python
-async def get_iframe_download_links(anime_id: str, episode_number: int, task_id: str | None = None) -> EpisodeDownloadInfo
+async def get_iframe_download_links(anime_id: str, episode_number: int) -> EpisodeDownloadInfo
 ```
 
 Gets download links from iframe-embedded content (requires browser).
@@ -111,7 +107,6 @@ Gets download links from iframe-embedded content (requires browser).
 
 - `anime_id`: Anime identifier
 - `episode_number`: Episode number (≥0)
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Raises:**
 
@@ -123,7 +118,7 @@ Gets download links from iframe-embedded content (requires browser).
 #### get_file_download_link
 
 ```python
-async def get_file_download_link(download_info: DownloadLinkInfo, task_id: str | None = None) -> str | None
+async def get_file_download_link(download_info: DownloadLinkInfo) -> str | None
 ```
 
 Resolves final download URLs from intermediate links.
@@ -131,7 +126,6 @@ Resolves final download URLs from intermediate links.
 **Parameters:**
 
 - `download_info`: Download information object
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Raises:**
 
@@ -153,7 +147,7 @@ from ani_scrapy import JKAnimeScraper
 #### search_anime
 
 ```python
-async def search_anime(query: str, page: int = 1, task_id: str | None = None) -> PagedSearchAnimeInfo
+async def search_anime(query: str, page: int = 1) -> PagedSearchAnimeInfo
 ```
 
 Searches for anime on JKAnime.
@@ -162,7 +156,6 @@ Searches for anime on JKAnime.
 
 - `query`: Search term (min 3 characters)
 - `page`: Page number (default: 1)
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Raises:**
 
@@ -174,7 +167,7 @@ Searches for anime on JKAnime.
 #### get_anime_info
 
 ```python
-async def get_anime_info(anime_id: str, include_episodes: bool = True, task_id: str | None = None) -> AnimeInfo
+async def get_anime_info(anime_id: str, include_episodes: bool = True) -> AnimeInfo
 ```
 
 Gets detailed anime information (requires browser for JKAnime).
@@ -183,7 +176,6 @@ Gets detailed anime information (requires browser for JKAnime).
 
 - `anime_id`: Anime identifier
 - `include_episodes`: Include episodes in the returned `AnimeInfo` object (default: True)
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Raises:**
 
@@ -195,7 +187,7 @@ Gets detailed anime information (requires browser for JKAnime).
 #### get_new_episodes
 
 ```python
-async def get_new_episodes(anime_id: str, last_episode_number: int, task_id: str | None = None) -> list[EpisodeInfo]
+async def get_new_episodes(anime_id: str, last_episode_number: int) -> list[EpisodeInfo]
 ```
 
 Fetches newly released episodes for an anime starting from the last known episode.
@@ -204,7 +196,6 @@ Fetches newly released episodes for an anime starting from the last known episod
 
 - `anime_id`: Anime identifier.
 - `last_episode_number`: Last known episode number (≥0).
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Returns:**
 
@@ -221,7 +212,7 @@ Fetches newly released episodes for an anime starting from the last known episod
 #### get_table_download_links
 
 ```python
-async def get_table_download_links(anime_id: str, episode_number: int, task_id: str | None = None) -> EpisodeDownloadInfo
+async def get_table_download_links(anime_id: str, episode_number: int) -> EpisodeDownloadInfo
 ```
 
 Gets direct download links from table servers.
@@ -230,7 +221,6 @@ Gets direct download links from table servers.
 
 - `anime_id`: Anime identifier
 - `episode_number`: Episode number (≥0)
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Raises:**
 
@@ -242,7 +232,7 @@ Gets direct download links from table servers.
 #### get_iframe_download_links
 
 ```python
-async def get_iframe_download_links(anime_id: str, episode_number: int, task_id: str | None = None) -> EpisodeDownloadInfo
+async def get_iframe_download_links(anime_id: str, episode_number: int) -> EpisodeDownloadInfo
 ```
 
 _Not supported yet for JKAnime_
@@ -252,7 +242,7 @@ _Not supported yet for JKAnime_
 #### get_file_download_link
 
 ```python
-async def get_file_download_link(download_info: DownloadLinkInfo, task_id: str | None = None) -> str | None
+async def get_file_download_link(download_info: DownloadLinkInfo) -> str | None
 ```
 
 Resolves final download URLs from intermediate links.
@@ -260,7 +250,6 @@ Resolves final download URLs from intermediate links.
 **Parameters:**
 
 - `download_info`: Download information object
-- `task_id`: Optional identifier for log correlation. If not provided, a random ID is generated.
 
 **Raises:**
 
@@ -272,10 +261,8 @@ Resolves final download URLs from intermediate links.
 
 ## Supported Servers
 
-| Servicio | AnimeFLV | JKAnime |
-|----------|----------|---------|
-| Streamwish (SW) | ✓ | ✓ |
-| YourUpload | ✓ | ✗ |
-| Mediafire | ✗ | ✓ |
-
-> **Nota:** Ver [Architecture](../01_architecture.md#task-id) para detalles sobre `task_id`.
+| Servicio        | AnimeFLV | JKAnime |
+| --------------- | -------- | ------- |
+| Streamwish (SW) | ✓        | ✓       |
+| YourUpload      | ✓        | ✗       |
+| Mediafire       | ✗        | ✓       |

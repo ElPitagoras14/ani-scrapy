@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example 07: Error Handling
+Example 06: Error Handling
 
 Demonstrates how to properly handle exceptions that may occur during scraping:
 - ScraperBlockedError: Website blocked the request
@@ -15,8 +15,6 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.text import Text
 from rich import print as rprint
-
-from ani_scrapy.core.base import generate_task_id
 
 console = Console()
 
@@ -34,9 +32,6 @@ def format_error(error_type, message, recovery=""):
 async def main():
     """Run the error handling example."""
     rprint("[bold cyan]=== Example 07: Error Handling[/bold cyan]\n")
-
-    task_id = generate_task_id()
-    rprint(f"[dim]Task ID: {task_id}[/dim]\n")
 
     rprint("[bold]Handling common scraping exceptions...[/bold]\n")
 
@@ -94,7 +89,7 @@ async def main():
     rprint("[yellow]4. Generic Exception Handling[/yellow]")
     rprint("-" * 50)
 
-    code_example = '''try:
+    code_example = """try:
     results = await scraper.search_anime(query="test")
 except ScraperBlockedError:
     print("Access blocked - try again later or use a proxy")
@@ -106,12 +101,12 @@ except ScraperError as e:
     print(f"Scraping error: {e}")
 except Exception as e:
     print(f"Unexpected error: {e}")
-'''
+"""
     console.print(
         Panel(
             Syntax(code_example, "python", line_numbers=True),
             title="Best Practice Example",
-            expand=False
+            expand=False,
         )
     )
 

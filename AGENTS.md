@@ -75,7 +75,6 @@ async def search_anime(
     self,
     query: str,
     page: int = 1,
-    task_id: Optional[str] = None,
 ) -> PagedSearchAnimeInfo:
 ```
 
@@ -85,7 +84,6 @@ async def search_anime(
 - **Functions/Variables**: snake_case (e.g., `search_anime`, `get_system_ram`)
 - **Constants**: UPPER_SNAKE_CASE (e.g., `DEFAULT_FORMAT`, `STATUS_PASS`)
 - **Private methods**: prefix with `_` (e.g., `_check_environment`)
-- **Task IDs**: use English alphanumeric characters (no accents)
 
 ### Async/Await Patterns
 
@@ -105,7 +103,7 @@ async def __aexit__(self, *args) -> None:
 ### Error Handling
 
 - Use custom exception hierarchy: `ScraperError` -> `ScraperTimeoutError`, `ScraperParseError`, `ScraperBlockedError`
-- Log errors with `loguru.logger` using `task_id` for correlation
+- Log errors with `loguru.logger`
 - Use context managers for resource cleanup
 - Define exceptions in `src/ani_scrapy/core/exceptions.py`
 
@@ -119,16 +117,19 @@ class ScraperTimeoutError(ScraperError):
 
 ### Logging
 
-- Use `loguru.logger` throughout
-- Create logger with `create_scraper_logger(task_id)` for correlation
-- Define default format in `src/ani_scrapy/core/base.py`
-- Include `task_id` in all log messages for tracking
+- Use `loguru.logger` throughout the codebase
+- The library does NOT configure Loguru - users must configure it in their application
+- Never call `logger.remove()` or modify global handlers in library code
+- For simple scripts, users can configure Loguru before using scrapers
 
 ```python
-from ani_scrapy.core.base import create_scraper_logger
+# In your application startup:
+from loguru import logger
+logger.configure(handlers=[...])
 
-log = create_scraper_logger(task_id)
-log.info("Searching anime | query={query}", query=query)
+# In scraper code:
+from loguru import logger
+logger.info("Message")
 ```
 
 ### Comments

@@ -5,16 +5,19 @@
 **ani-scrapy** is an async-first Python library for scraping anime websites. It provides a unified interface for extracting anime metadata, episode information, and download links from multiple anime streaming platforms.
 
 ### Primary Use Cases
+
 - Building anime download automation tools
 - Creating anime metadata aggregators
 - Monitoring new episode releases
 - Extracting download links from multiple hosting servers
 
 ### Supported Platforms
+
 - **AnimeFLV**: Full support (search, info, table downloads, iframe downloads)
 - **JKAnime**: Supports search, info, table downloads, file downloads (iframe downloads not supported)
 
 ### When to Use This Library
+
 - When you need async/await patterns for concurrent scraping
 - When you need unified API across multiple anime sites
 - When you need both static (aiohttp) and dynamic (Playwright) content extraction
@@ -23,16 +26,19 @@
 ## 2. Installation
 
 ### From PyPI
+
 ```bash
 pip install ani-scrapy
 ```
 
 ### From GitHub
+
 ```bash
 pip install git+https://github.com/ElPitagoras14/ani-scrapy.git
 ```
 
 ### Development Installation
+
 ```bash
 git clone https://github.com/ElPitagoras14/ani-scrapy.git
 cd ani-scrapy
@@ -41,14 +47,17 @@ playwright install chromium
 ```
 
 ### Python Version Compatibility
+
 - Python >= 3.10.14 (tested with Python 3.12)
 
 ### Browser Requirement
+
 ```bash
 playwright install chromium
 ```
 
 **Recommendation**: Use Brave browser for sites with excessive advertising:
+
 - Windows: `C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe`
 - Linux: `/usr/bin/brave`
 - macOS: `/Applications/Brave Browser.app/Contents/MacOS/Brave Browser`
@@ -56,18 +65,18 @@ playwright install chromium
 ## 3. Import and Entry Points
 
 ### Root Package Import
+
 ```python
-from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AsyncBrowser, generate_task_id
+from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AsyncBrowser
 from ani_scrapy import ScraperError, ScraperBlockedError, ScraperTimeoutError, ScraperParseError
 ```
 
 ### Core Modules
+
 ```python
 # Base classes and utilities
 from ani_scrapy.core import (
     BaseScraper,
-    create_scraper_logger,
-    generate_task_id,
     AsyncBrowser,
     AsyncHttpAdapter,
     ScraperError,
@@ -89,6 +98,7 @@ from ani_scrapy.core import (
 ```
 
 ### CLI Entry Point
+
 ```bash
 ani-scrapy doctor              # Run diagnostic tool
 ani-scrapy doctor --output json  # JSON output for CI/CD
@@ -119,6 +129,7 @@ The library follows a layered architecture:
 ### Context Manager Pattern
 
 All scrapers support both sync and async context managers:
+
 ```python
 # Async context manager (recommended)
 async with AnimeFLVScraper() as scraper:
@@ -130,19 +141,11 @@ with AnimeFLVScraper() as scraper:
     scraper.close()
 ```
 
-### Task ID Correlation
-
-The library uses `task_id` for log correlation across operations:
-```python
-task_id = generate_task_id()  # Generate 12-character alphanumeric ID
-results = await scraper.search_anime("naruto", task_id=task_id)
-```
-
 ### Content Extraction Methods
 
 1. **Static (aiohttp + BeautifulSoup)**: For pages with server-rendered HTML
 2. **Dynamic (Playwright)**: For JavaScript-rendered content
-3. **Mixed**: Automatic fallback between methods
+3. **Mixed**: Automatic fallback between static and dynamic methods
 
 ## 5. Public API Reference
 
@@ -165,48 +168,55 @@ from ani_scrapy.core.exceptions import (
 class BaseScraper(ABC):
     def __init__(
         self,
-        log_file: Optional[str] = None,
-        level: str = "INFO",
         headless: bool = True,
         executable_path: str = "",
     ) -> None:
         """Initialize the scraper.
 
         Args:
-            log_file: Optional path to log file. Logs are rotated daily and kept for 7 days.
-            level: Log level (DEBUG, INFO, WARNING, ERROR). Default: INFO.
             headless: Whether to run browser in headless mode. Default: True.
             executable_path: Path to custom browser executable (e.g., Brave).
         """
 ```
 
 **Methods**:
+
 - `close()`: Synchronous resource cleanup
 - `aclose()`: Async resource cleanup
 
-### 5.3 Logging Utilities
+### 5.3 Logging
 
-**Import Path**: `from ani_scrapy.core import create_scraper_logger, generate_task_id`
+Ani-Scrapy uses **Loguru** for all logging but does **not** configure it automatically. You must configure Loguru in your application if you want custom logging behavior.
+
+#### Default Behavior
+
+All scrapers use the global Loguru logger. Without any configuration, logs go to stderr with Loguru's defaults:
 
 ```python
-def create_scraper_logger(task_id: str = "") -> loguru.Logger:
-    """Create logger bound to task_id for consistent log context.
+from ani_scrapy import AnimeFLVScraper
 
-    Args:
-        task_id: Optional task identifier for correlating logs.
+async with AnimeFLVScraper() as scraper:
+    await scraper.search_anime("naruto")
+# Logs appear on stderr
+```
 
-    Returns:
-        Loguru logger instance bound to task_id.
-    """
+#### Application-Level Configuration (Recommended)
 
-def generate_task_id() -> str:
-    """Generate a random 12-character task ID.
+Configure Loguru once at application startup. All scrapers will inherit this configuration:
 
-    Uses only English alphabet characters and digits.
+```python
+from loguru import logger
+import sys
 
-    Returns:
-        A 12-character alphanumeric string (e.g., 'Ab3xK9mNp2Qr').
-    """
+logger.configure(
+    handlers=[
+        {"sink": "app.log", "level": "DEBUG", "enqueue": True},
+        {"sink": sys.stderr, "level": "INFO"},
+    ]
+)
+
+from ani_scrapy import AnimeFLVScraper
+# All scrapers now use this configuration
 ```
 
 ### 5.4 AsyncBrowser
@@ -265,14 +275,12 @@ class AsyncHttpAdapter:
         self,
         endpoint: str,
         params: Optional[Dict] = None,
-        task_id: str = "",
     ) -> str:
         """Perform async GET request.
 
         Args:
             endpoint: API endpoint (appended to base_url).
             params: Query parameters.
-            task_id: Task ID for log correlation.
 
         Returns:
             Response body as string.
@@ -285,14 +293,12 @@ class AsyncHttpAdapter:
         self,
         endpoint: str,
         data: Optional[Dict] = None,
-        task_id: str = "",
     ) -> str:
         """Perform async POST request.
 
         Args:
             endpoint: API endpoint.
             data: Form data.
-            task_id: Task ID for log correlation.
 
         Returns:
             Response body as string.
@@ -383,133 +389,15 @@ class AnimeFLVScraper(BaseScraper):
 
     def __init__(
         self,
-        log_file: Optional[str] = None,
-        level: str = "INFO",
         headless: bool = True,
         executable_path: str = "",
     ):
         """Initialize AnimeFLV scraper.
 
         Args:
-            log_file: Optional path to log file.
-            level: Log level (DEBUG, INFO, WARNING, ERROR).
             headless: Run browser in headless mode.
             executable_path: Path to custom browser executable.
         """
-
-    async def search_anime(
-        self,
-        query: str,
-        page: int = 1,
-        task_id: Optional[str] = None,
-    ) -> PagedSearchAnimeInfo:
-        """Search for anime on AnimeFLV.
-
-        Args:
-            query: Search query string.
-            page: Page number (must be >= 1).
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            PagedSearchAnimeInfo with search results.
-
-        Raises:
-            ValueError: If page < 1.
-        """
-
-    async def get_anime_info(
-        self,
-        anime_id: str,
-        include_episodes: bool = True,
-        task_id: Optional[str] = None,
-    ) -> AnimeInfo:
-        """Get detailed anime information.
-
-        Args:
-            anime_id: Anime identifier (from search results).
-            include_episodes: Whether to include episode list. Default: True.
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            AnimeInfo with full metadata.
-        """
-
-    async def get_new_episodes(
-        self,
-        anime_id: str,
-        last_episode_number: int,
-        task_id: Optional[str] = None,
-    ) -> list[EpisodeInfo]:
-        """Get episodes newer than last_episode_number.
-
-        Args:
-            anime_id: Anime identifier.
-            last_episode_number: Last known episode number.
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            List of new EpisodeInfo objects (in ascending order).
-        """
-
-    async def get_table_download_links(
-        self,
-        anime_id: str,
-        episode_number: int,
-        task_id: Optional[str] = None,
-    ) -> EpisodeDownloadInfo:
-        """Get table download links for an episode (static content).
-
-        Args:
-            anime_id: Anime identifier.
-            episode_number: Episode number (must be >= 0).
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            EpisodeDownloadInfo with download links.
-
-        Raises:
-            ValueError: If episode_number < 0.
-        """
-
-    async def get_iframe_download_links(
-        self,
-        anime_id: str,
-        episode_number: int,
-        task_id: Optional[str] = None,
-    ) -> EpisodeDownloadInfo:
-        """Get iframe download links for an episode (dynamic content).
-
-        Uses Playwright to extract JavaScript-rendered download links.
-
-        Args:
-            anime_id: Anime identifier.
-            episode_number: Episode number.
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            EpisodeDownloadInfo with download links.
-        """
-
-    async def get_file_download_link(
-        self,
-        download_info: DownloadLinkInfo,
-        task_id: Optional[str] = None,
-    ) -> str | None:
-        """Get final file download URL from a download link.
-
-        Args:
-            download_info: DownloadLinkInfo from get_table_download_links or get_iframe_download_links.
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            Final download URL or None if unavailable.
-
-        Raises:
-            TypeError: If download_info is not a DownloadLinkInfo object.
-        """
-
-    async def aclose(self) -> None:
-        """Clean up HTTP session resources."""
 ```
 
 ### 5.8 JKAnimeScraper
@@ -522,126 +410,15 @@ class JKAnimeScraper(BaseScraper):
 
     def __init__(
         self,
-        log_file: Optional[str] = None,
-        level: str = "INFO",
         headless: bool = True,
         executable_path: str = "",
     ):
         """Initialize JKAnime scraper.
 
         Args:
-            log_file: Optional path to log file.
-            level: Log level (DEBUG, INFO, WARNING, ERROR).
             headless: Run browser in headless mode.
             executable_path: Path to custom browser executable.
         """
-
-    async def search_anime(
-        self,
-        query: str,
-        page: int = 1,
-        task_id: Optional[str] = None,
-    ) -> PagedSearchAnimeInfo:
-        """Search for anime on JKAnime.
-
-        Args:
-            query: Search query string.
-            page: Page number (currently always returns page 1).
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            PagedSearchAnimeInfo with search results.
-        """
-
-    async def get_anime_info(
-        self,
-        anime_id: str,
-        include_episodes: bool = True,
-        task_id: Optional[str] = None,
-    ) -> AnimeInfo:
-        """Get detailed anime information.
-
-        Args:
-            anime_id: Anime identifier (from search results).
-            include_episodes: Whether to include episode list. Requires Playwright.
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            AnimeInfo with full metadata.
-        """
-
-    async def get_new_episodes(
-        self,
-        anime_id: str,
-        last_episode_number: int,
-        task_id: Optional[str] = None,
-    ) -> list[EpisodeInfo]:
-        """Get episodes newer than last_episode_number.
-
-        Args:
-            anime_id: Anime identifier.
-            last_episode_number: Last known episode number.
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            List of new EpisodeInfo objects.
-        """
-
-    async def get_table_download_links(
-        self,
-        anime_id: str,
-        episode_number: int,
-        task_id: Optional[str] = None,
-    ) -> EpisodeDownloadInfo:
-        """Get table download links for an episode.
-
-        Args:
-            anime_id: Anime identifier.
-            episode_number: Episode number.
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            EpisodeDownloadInfo with download links.
-        """
-
-    async def get_iframe_download_links(
-        self,
-        anime_id: str,
-        episode_number: int,
-        task_id: Optional[str] = None,
-    ) -> EpisodeDownloadInfo:
-        """Get iframe download links (NOT SUPPORTED for JKAnime).
-
-        Returns empty EpisodeDownloadInfo with warning.
-
-        Args:
-            anime_id: Anime identifier.
-            episode_number: Episode number.
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            EpisodeDownloadInfo with empty download_links list.
-        """
-
-    async def get_file_download_link(
-        self,
-        download_info: DownloadLinkInfo,
-        task_id: Optional[str] = None,
-    ) -> str | None:
-        """Get final file download URL.
-
-        Supports Streamwish and Mediafire servers.
-
-        Args:
-            download_info: DownloadLinkInfo from get_table_download_links.
-            task_id: Optional task ID for log correlation.
-
-        Returns:
-            Final download URL or None if unavailable.
-        """
-
-    async def aclose(self) -> None:
-        """Clean up HTTP session resources."""
 ```
 
 ## 6. Usage Patterns (LLM-Optimized)
@@ -656,7 +433,7 @@ async def main():
     async with AnimeFLVScraper() as scraper:
         results = await scraper.search_anime(query="naruto")
         print(f"Found {len(results.animes)} results")
-        
+
         if results.animes:
             info = await scraper.get_anime_info(anime_id=results.animes[0].id)
             print(f"Title: {info.title}")
@@ -674,14 +451,14 @@ async def main():
     async with AnimeFLVScraper() as scraper:
         # 1. Search for anime
         search_results = await scraper.search_anime(query="one piece")
-        
+
         if not search_results.animes:
             print("No results found")
             return
-            
+
         anime = search_results.animes[0]
         print(f"Selected: {anime.title} ({anime.id})")
-        
+
         # 2. Get detailed info
         info = await scraper.get_anime_info(
             anime_id=anime.id,
@@ -689,7 +466,7 @@ async def main():
         )
         print(f"Episodes: {len(info.episodes)}")
         print(f"Genres: {', '.join(info.genres)}")
-        
+
         # 3. Get download links for first episode
         if info.episodes:
             first_ep = info.episodes[0]
@@ -700,36 +477,6 @@ async def main():
                 )
                 for link in download_links.download_links:
                     print(f"Server: {link.server}, URL: {link.url}")
-
-asyncio.run(main())
-```
-
-### Advanced: Task ID and Custom Browser
-
-```python
-import asyncio
-from ani_scrapy import AnimeFLVScraper, generate_task_id
-
-async def main():
-    # Generate task ID for log correlation
-    task_id = generate_task_id()
-    
-    # Use Brave browser (recommended for ad-heavy sites)
-    brave_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
-    
-    async with AnimeFLVScraper(
-        executable_path=brave_path,
-        log_file="logs/scraper.log",
-        level="DEBUG"
-    ) as scraper:
-        results = await scraper.search_anime(
-            query="attack on titan",
-            task_id=task_id
-        )
-        
-        # All logs will have the same task_id for correlation
-        for anime in results.animes[:5]:
-            print(f"[{task_id}] {anime.title}")
 
 asyncio.run(main())
 ```
@@ -747,17 +494,17 @@ async def get_anime_info_batch(scraper, anime_ids):
         for anime_id in anime_ids
     ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
-    
+
     # Filter out exceptions
     valid_results = [r for r in results if not isinstance(r, Exception)]
     return valid_results
 
 async def main():
     anime_ids = ["naruto", "one-piece", "bleach", "fairy-tail", "hunter-x-hunter"]
-    
+
     async with AnimeFLVScraper() as scraper:
         results = await get_anime_info_batch(scraper, anime_ids)
-        
+
         for info in results:
             print(f"{info.title}: {len(info.episodes)} episodes")
 
@@ -774,7 +521,7 @@ async def main():
     async with AsyncBrowser(headless=True) as browser:
         page = await browser.new_page()
         await page.goto("https://example.com")
-        
+
         # Your custom Playwright automation here
         title = await page.title()
         print(f"Page title: {title}")
@@ -784,18 +531,21 @@ asyncio.run(main())
 
 ## 7. Common Task Recipes
 
-### Recipe 1: Initialize with Logging
+### Recipe 1: Configure Logging
 
 ```python
-from ani_scrapy import AnimeFLVScraper
+from loguru import logger
+import sys
 
-async def main():
-    async with AnimeFLVScraper(
-        log_file="logs/scraper.log",  # Daily rotation, 7-day retention
-        level="DEBUG"  # Capture all logs
-    ) as scraper:
-        # All operations logged to file
-        pass
+# Configure Loguru once at application startup
+logger.configure(
+    handlers=[
+        {"sink": "app.log", "level": "DEBUG", "enqueue": True},
+        {"sink": sys.stderr, "level": "INFO"},
+    ]
+)
+
+# All scrapers will use this configuration automatically
 ```
 
 ### Recipe 2: Error Handling
@@ -813,7 +563,7 @@ async def main():
     try:
         async with AnimeFLVScraper() as scraper:
             results = await scraper.search_anime("naruto")
-            
+
     except ScraperBlockedError:
         print("IP blocked - try using a different IP or wait")
     except ScraperTimeoutError:
@@ -838,7 +588,7 @@ async def main():
             anime_id="naruto",
             episode_number=1
         )
-        
+
         # Get file URL from a link
         for link in links.download_links:
             if link.url:
@@ -859,7 +609,7 @@ async def main():
             anime_id="one-piece",
             last_episode_number=LAST_KNOWN_EPISODE
         )
-        
+
         if new_episodes:
             print(f"Found {len(new_episodes)} new episodes!")
             for ep in new_episodes:
@@ -880,10 +630,10 @@ async def search_both_platforms(query):
             flv.search_anime(query),
             jk.search_anime(query)
         )
-        
+
         print(f"AnimeFLV: {len(flv_results.animes)} results")
         print(f"JKAnime: {len(jk_results.animes)} results")
-        
+
         return flv_results.animes, jk_results.animes
 
 asyncio.run(search_both_platforms("naruto"))
@@ -894,24 +644,18 @@ asyncio.run(search_both_platforms("naruto"))
 ### Recommended Calling Patterns
 
 1. **Always use async context managers**:
+
    ```python
    # CORRECT
    async with AnimeFLVScraper() as scraper:
        results = await scraper.search_anime("query")
-   
+
    # AVOID (will not work properly)
    scraper = AnimeFLVScraper()
    results = await scraper.search_anime("query")
    ```
 
-2. **Provide task_id for correlated logging**:
-   ```python
-   task_id = generate_task_id()
-   results = await scraper.search_anime("query", task_id=task_id)
-   info = await scraper.get_anime_info(anime_id, task_id=task_id)
-   ```
-
-3. **Handle empty results**:
+2. **Handle empty results**:
    ```python
    results = await scraper.search_anime("query")
    if not results.animes:
@@ -923,10 +667,11 @@ asyncio.run(search_both_platforms("naruto"))
 ### Common Pitfalls to Avoid
 
 1. **Forgetting to await async methods**:
+
    ```python
    # WRONG
    results = scraper.search_anime("query")
-   
+
    # CORRECT
    results = await scraper.search_anime("query")
    ```
@@ -936,6 +681,7 @@ asyncio.run(search_both_platforms("naruto"))
    - Must use `await` and `asyncio.run()`
 
 3. **Not handling None values in download links**:
+
    ```python
    # Some links may have url=None
    if link.url:  # Check before using
@@ -976,8 +722,7 @@ for ep in info.episodes:
 
 1. **Network connectivity**: Assumes reliable internet connection
 2. **Website structure**: Parsers rely on specific HTML structure - may break with site updates
-3. **English alphanumeric task IDs**: `generate_task_id()` only uses a-zA-Z0-9
-4. **Single context manager usage**: Scrapers are designed for single context entry
+3. **Single context manager usage**: Scrapers are designed for single context entry
 
 ### Performance Considerations
 
@@ -1040,6 +785,7 @@ User Code
 ### Extension Points
 
 To add a new scraper:
+
 1. Create new module in `src/ani_scrapy/<site>/`
 2. Inherit from `BaseScraper`
 3. Implement required methods (`search_anime`, `get_anime_info`, etc.)

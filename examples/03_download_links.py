@@ -16,7 +16,6 @@ from rich import print as rprint
 
 from ani_scrapy import AnimeFLVScraper
 from ani_scrapy.jkanime import JKAnimeScraper
-from ani_scrapy.core.base import generate_task_id
 
 BRAVE_PATH = (
     r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
@@ -29,9 +28,6 @@ async def main():
     """Run the download links example."""
     rprint("[bold cyan]=== Example 03: Download Links[/bold cyan]\n")
 
-    task_id = generate_task_id()
-    rprint(f"[dim]Task ID: {task_id}[/dim]\n")
-
     anime_id = "gachiakuta"
     episode_number = 24
 
@@ -41,7 +37,6 @@ async def main():
     )
 
     async with AnimeFLVScraper(
-        level="DEBUG",
         headless=True,
         executable_path=BRAVE_PATH,
     ) as scraper_flv:
@@ -50,7 +45,7 @@ async def main():
         )
         start_flv = time.perf_counter()
         table_links = await scraper_flv.get_table_download_links(
-            anime_id=anime_id, episode_number=episode_number, task_id=task_id
+            anime_id=anime_id, episode_number=episode_number
         )
 
         if table_links.download_links:
@@ -77,7 +72,7 @@ async def main():
             + "===[/bold yellow]"
         )
         iframe_links = await scraper_flv.get_iframe_download_links(
-            anime_id=anime_id, episode_number=episode_number, task_id=task_id
+            anime_id=anime_id, episode_number=episode_number
         )
 
         if iframe_links.download_links:
@@ -103,7 +98,7 @@ async def main():
             for link in iframe_links.download_links[:1]:
                 if link.url:
                     final_url = await scraper_flv.get_file_download_link(
-                        download_info=link, task_id=task_id
+                        download_info=link
                     )
                     if final_url:
                         rprint(
@@ -120,7 +115,6 @@ async def main():
         rprint(f"\n[dim]AnimeFLV total time: {elapsed_flv:.2f}s[/dim]")
 
     async with JKAnimeScraper(
-        level="DEBUG",
         headless=True,
         executable_path=BRAVE_PATH,
     ) as scraper_jk:
@@ -134,7 +128,7 @@ async def main():
         )
         start_jk = time.perf_counter()
         table_links = await scraper_jk.get_table_download_links(
-            anime_id=anime_id, episode_number=episode_number, task_id=task_id
+            anime_id=anime_id, episode_number=episode_number
         )
 
         if table_links.download_links:
@@ -168,7 +162,7 @@ async def main():
                 )
 
                 file_link = await scraper_jk.get_file_download_link(
-                    download_info=valid_download, task_id=task_id
+                    download_info=valid_download
                 )
 
                 if file_link:

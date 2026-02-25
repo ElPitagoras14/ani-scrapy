@@ -3,10 +3,11 @@
 import asyncio
 import time
 from urllib.parse import quote
-from typing import Optional
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
-from ani_scrapy.core.base import BaseScraper, create_scraper_logger, generate_task_id
+from loguru import logger
+
+from ani_scrapy.core.base import BaseScraper
 from ani_scrapy.core.browser import AsyncBrowser
 from ani_scrapy.core.http import AsyncHttpAdapter
 from ani_scrapy.jkanime.parser import JKAnimeParser
@@ -34,14 +35,10 @@ class JKAnimeScraper(BaseScraper):
 
     def __init__(
         self,
-        log_file: Optional[str] = None,
-        level: str = "INFO",
         headless: bool = True,
         executable_path: str = "",
     ):
         super().__init__(
-            log_file=log_file,
-            level=level,
             headless=headless,
             executable_path=executable_path,
         )
@@ -63,9 +60,7 @@ class JKAnimeScraper(BaseScraper):
     ) -> None:
         """Safely click an element handling popups."""
         ctx = page.context
-        log = create_scraper_logger(
-            page.task_id if hasattr(page, "task_id") else ""
-        )
+        log = logger
 
         popup_task = asyncio.create_task(ctx.wait_for_event("page"))
 
@@ -91,13 +86,10 @@ class JKAnimeScraper(BaseScraper):
                 await element.click(force=True)
 
     async def search_anime(
-        self, query: str, page: int = 1, task_id: Optional[str] = None
+        self, query: str, page: int = 1
     ) -> PagedSearchAnimeInfo:
         """Search anime."""
-        if task_id is None:
-            task_id = generate_task_id()
-
-        log = create_scraper_logger(task_id)
+        log = logger
         log.info("Searching anime | query={query}", query=query)
 
         safe_query = quote(query)
@@ -105,7 +97,7 @@ class JKAnimeScraper(BaseScraper):
         log.debug("Using search URL | url={url}", url=search_anime_url)
 
         try:
-            html_text = await self.http.get(search_anime_url, task_id=task_id)
+            html_text = await self.http.get(search_anime_url)
         except ConnectionError as e:
             raise ScraperTimeoutError(str(e)) from e
 
@@ -123,13 +115,9 @@ class JKAnimeScraper(BaseScraper):
         self,
         anime_id: str,
         include_episodes: bool = True,
-        task_id: Optional[str] = None,
     ) -> AnimeInfo:
         """Get anime info."""
-        if task_id is None:
-            task_id = generate_task_id()
-
-        log = create_scraper_logger(task_id)
+        log = logger
         log.info("Getting anime info | anime_id={anime_id}", anime_id=anime_id)
 
         url = f"{BASE_URL}/{anime_id}"
@@ -144,21 +132,21 @@ class JKAnimeScraper(BaseScraper):
             ) as browser:
                 async with await browser.new_page() as page:
                     return await self._get_anime_info_with_episodes(
-                        page, url, anime_id, task_id
+                        page, url, anime_id
                     )
 
         try:
-            html_text = await self.http.get(url, task_id=task_id)
+            html_text = await self.http.get(url)
         except ConnectionError as e:
             raise ScraperTimeoutError(str(e)) from e
 
         return self.parser.parse_anime_info(html_text, anime_id)
 
     async def _get_anime_info_with_episodes(
-        self, page, url: str, anime_id: str, task_id: str
+        self, page, url: str, anime_id: str
     ) -> AnimeInfo:
         """Get anime info with episodes using Playwright."""
-        log = create_scraper_logger(task_id)
+        log = logger
         log.debug("Fetching anime info page with Playwright")
 
         await page.goto(url, wait_until="domcontentloaded")
@@ -167,17 +155,17 @@ class JKAnimeScraper(BaseScraper):
         html_text = await page.content()
         anime_info = self.parser.parse_anime_info(html_text, anime_id)
 
-        episodes = await self._extract_all_episodes(page, anime_id, task_id)
+        episodes = await self._extract_all_episodes(page, anime_id)
         anime_info.episodes = list(episodes)
 
         log.info("Anime info fetched | episodes={count}", count=len(episodes))
         return anime_info
 
     async def _extract_all_episodes(
-        self, page, anime_id: str, task_id: str
+        self, page, anime_id: str
     ) -> list[EpisodeInfo]:
         """Extract all episodes by navigating pages."""
-        log = create_scraper_logger(task_id)
+        log = logger
 
         await page.wait_for_selector(
             "div.nice-select.anime__pagination ul > li"
@@ -285,13 +273,9 @@ class JKAnimeScraper(BaseScraper):
         self,
         anime_id: str,
         last_episode_number: int,
-        task_id: Optional[str] = None,
     ) -> list[EpisodeInfo]:
         """Get new episodes since last_episode_number."""
-        if task_id is None:
-            task_id = generate_task_id()
-
-        log = create_scraper_logger(task_id)
+        log = logger
         log.info(
             "Getting new episodes | anime_id={anime_id} last_episode_number={last_episode_number}",
             anime_id=anime_id,
@@ -309,7 +293,7 @@ class JKAnimeScraper(BaseScraper):
         ) as browser:
             async with await browser.new_page() as page:
                 return await self._get_new_episodes_internal(
-                    page, url, anime_id, last_episode_number, task_id
+                    page, url, anime_id, last_episode_number
                 )
 
     async def _get_new_episodes_internal(
@@ -318,10 +302,9 @@ class JKAnimeScraper(BaseScraper):
         url: str,
         anime_id: str,
         last_episode_number: int,
-        task_id: str,
     ) -> list[EpisodeInfo]:
         """Internal method for getting new episodes."""
-        log = create_scraper_logger(task_id)
+        log = logger
 
         await page.goto(url)
         await page.wait_for_selector(
@@ -457,13 +440,9 @@ class JKAnimeScraper(BaseScraper):
         self,
         anime_id: str,
         episode_number: int,
-        task_id: Optional[str] = None,
     ) -> EpisodeDownloadInfo:
         """Get table download links for an episode."""
-        if task_id is None:
-            task_id = generate_task_id()
-
-        log = create_scraper_logger(task_id)
+        log = logger
         log.info(
             "Getting table download links | anime_id={anime_id} episode_number={episode_number}",
             anime_id=anime_id,
@@ -479,7 +458,7 @@ class JKAnimeScraper(BaseScraper):
         ) as browser:
             async with await browser.new_page() as page:
                 return await self._get_table_download_links_internal(
-                    page, anime_id, episode_number, task_id
+                    page, anime_id, episode_number
                 )
 
     async def _get_table_download_links_internal(
@@ -487,10 +466,9 @@ class JKAnimeScraper(BaseScraper):
         page,
         anime_id: str,
         episode_number: int,
-        task_id: str,
     ) -> EpisodeDownloadInfo:
         """Get table download links using page from Playwright."""
-        log = create_scraper_logger(task_id)
+        log = logger
 
         url = f"{BASE_URL}/{anime_id}/{episode_number}"
         await page.goto(url)
@@ -517,13 +495,9 @@ class JKAnimeScraper(BaseScraper):
         self,
         anime_id: str,
         episode_number: int,
-        task_id: Optional[str] = None,
     ) -> EpisodeDownloadInfo:
         """Get iframe download links for an episode."""
-        if task_id is None:
-            task_id = generate_task_id()
-
-        log = create_scraper_logger(task_id)
+        log = logger
         log.warning("iframe download links not supported for JKAnime")
 
         return EpisodeDownloadInfo(
@@ -533,13 +507,9 @@ class JKAnimeScraper(BaseScraper):
     async def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
-        task_id: Optional[str] = None,
     ) -> str | None:
         """Get file download link for a download link info object."""
-        if task_id is None:
-            task_id = generate_task_id()
-
-        log = create_scraper_logger(task_id)
+        log = logger
 
         if not isinstance(download_info, DownloadLinkInfo):
             raise TypeError("download_info must be a DownloadLinkInfo object")
@@ -567,15 +537,11 @@ class JKAnimeScraper(BaseScraper):
             headless=self.headless,
         ) as browser:
             async with await browser.new_page() as page:
-                return await self._file_link_getters[server](
-                    page, url, task_id
-                )
+                return await self._file_link_getters[server](page, url)
 
-    async def _get_streamwish_file_link(
-        self, page, url: str, task_id: str = ""
-    ) -> str | None:
+    async def _get_streamwish_file_link(self, page, url: str) -> str | None:
         """Get Streamwish file download link."""
-        log = create_scraper_logger(task_id)
+        log = logger
         log.debug("Getting Streamwish file link")
 
         await page.goto(url)
@@ -618,11 +584,9 @@ class JKAnimeScraper(BaseScraper):
 
         return None
 
-    async def _get_mediafire_file_link(
-        self, page, url: str, task_id: str = ""
-    ) -> str | None:
+    async def _get_mediafire_file_link(self, page, url: str) -> str | None:
         """Get Mediafire file download link."""
-        log = create_scraper_logger(task_id)
+        log = logger
         log.debug("Getting Mediafire file link")
 
         await page.goto(url)

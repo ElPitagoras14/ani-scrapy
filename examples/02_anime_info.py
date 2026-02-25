@@ -18,7 +18,6 @@ from rich import print as rprint
 
 from ani_scrapy import AnimeFLVScraper
 from ani_scrapy.jkanime import JKAnimeScraper
-from ani_scrapy.core.base import generate_task_id
 from ani_scrapy.core.schemas import AnimeInfo
 
 BRAVE_PATH = (
@@ -68,20 +67,13 @@ async def main():
     """Run the anime info example."""
     rprint("[bold cyan]=== Example 02: Get Anime Information[/bold cyan]\n")
 
-    task_id = generate_task_id()
-    rprint(f"[dim]Task ID: {task_id}[/dim]\n")
-
-    async with AnimeFLVScraper(
-        level="DEBUG", headless=True, executable_path=BRAVE_PATH
-    ) as scraper:
+    async with AnimeFLVScraper(headless=True) as scraper:
         anime_id = "gachiakuta"
 
         rprint(f"[bold]Fetching info for:[/bold] '{anime_id}'\n")
 
         start_time = time.perf_counter()
-        anime = await scraper.get_anime_info(
-            anime_id=anime_id, task_id=task_id
-        )
+        anime = await scraper.get_anime_info(anime_id=anime_id)
         elapsed = time.perf_counter() - start_time
 
         console.print(format_info(anime))
@@ -112,7 +104,6 @@ async def main():
     # JKAnime with local Brave browser
 
     async with JKAnimeScraper(
-        level="DEBUG",
         headless=True,
         executable_path=BRAVE_PATH,
     ) as scraper:
@@ -125,9 +116,7 @@ async def main():
         rprint(f"[dim]Browser: {BRAVE_PATH}[/dim]\n")
 
         start_time = time.perf_counter()
-        anime = await scraper.get_anime_info(
-            anime_id=anime_id, task_id=task_id
-        )
+        anime = await scraper.get_anime_info(anime_id=anime_id)
         elapsed = time.perf_counter() - start_time
 
         console.print(format_info(anime))

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example 06: Concurrent Scraping
+Example 05: Concurrent Scraping
 
 Demonstrates how to efficiently scrape multiple anime concurrently.
 This is useful for batch operations like getting info for many anime at once.
@@ -14,7 +14,6 @@ from rich.table import Table
 from rich import print as rprint
 
 from ani_scrapy.jkanime import JKAnimeScraper
-from ani_scrapy.core.base import generate_task_id
 
 BRAVE_PATH = (
     r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
@@ -23,13 +22,11 @@ BRAVE_PATH = (
 console = Console()
 
 
-async def scrape_anime_info(scraper, anime_id, task_id):
+async def scrape_anime_info(scraper, anime_id):
     """Scrape info for a single anime."""
     start = time.perf_counter()
     try:
-        anime = await scraper.get_anime_info(
-            anime_id=anime_id, task_id=task_id
-        )
+        anime = await scraper.get_anime_info(anime_id=anime_id)
         elapsed = time.perf_counter() - start
         return (
             anime_id,
@@ -44,13 +41,9 @@ async def scrape_anime_info(scraper, anime_id, task_id):
 
 async def main():
     """Run the concurrent scraping demo."""
-    rprint("[bold cyan]=== Example 06: Concurrent Scraping[/bold cyan]\n")
-
-    task_id = generate_task_id()
-    rprint(f"[dim]Task ID: {task_id}[/dim]\n")
+    rprint("[bold cyan]=== Example 05: Concurrent Scraping[/bold cyan]\n")
 
     async with JKAnimeScraper(
-        level="WARNING",
         headless=True,
         executable_path=BRAVE_PATH,
     ) as scraper:
@@ -81,7 +74,7 @@ async def main():
 
             results = []
             for anime_id in anime_ids:
-                result = await scrape_anime_info(scraper, anime_id, task_id)
+                result = await scrape_anime_info(scraper, anime_id)
                 results.append(result)
                 progress.advance(main_task, 1)
 
