@@ -120,12 +120,11 @@ class JKAnimeScraper(BaseScraper):
         log = logger
         log.info("Getting anime info | anime_id={anime_id}", anime_id=anime_id)
 
-        url = f"{BASE_URL}/{anime_id}"
-
         if include_episodes:
             executable_path = (
                 self.executable_path if self.executable_path else None
             )
+            url = f"{BASE_URL}/{anime_id}"
             async with AsyncBrowser(
                 executable_path=executable_path,
                 headless=self.headless,
@@ -136,7 +135,7 @@ class JKAnimeScraper(BaseScraper):
                     )
 
         try:
-            html_text = await self.http.get(url)
+            html_text = await self.http.get(anime_id)
         except ConnectionError as e:
             raise ScraperTimeoutError(str(e)) from e
 

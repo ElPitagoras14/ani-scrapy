@@ -208,3 +208,25 @@ def doctor(
 - Propose alternatives when relevant decisions exist
 - Briefly explain trade-offs between alternatives
 - Do not impose design patterns; suggest them only when they add real value
+
+## Git Conventions
+
+Use **Conventional Commits** for all commit messages:
+
+```
+<type>: <short description>
+```
+
+**Types**: `feat`, `fix`, `chore`, `refactor`, `docs`, `style`, `perf`, `ci`
+
+Commit with title only:
+
+```bash
+git commit -m "feat: add episode download endpoint"
+```
+
+Commit with title and optional description:
+
+```bash
+git commit -m "feat: add episode download endpoint" -m "Supports both single and bulk downloads. Dispatches tasks to the queue via Celery."
+```
