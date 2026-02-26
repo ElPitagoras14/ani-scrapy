@@ -1,6 +1,6 @@
 [project]
 name = "ani-scrapy"
-version = "0.3.4"
+version = "0.3.5"
 description = "Async-first Python library for scraping anime websites. Supports AnimeFLV and JKAnime with unified interface, detailed metadata, and download links from multiple servers."
 readme = "README.md"
 requires-python = ">=3.10.14"
