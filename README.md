@@ -204,25 +204,98 @@ For complete documentation: [Docs index](https://github.com/ElPitagoras14/ani-sc
 
 ## 🛠️ Advanced Usage
 
-### Manual Browser Usage
+### Browser Usage Patterns
 
-For advanced use cases where you need direct control over the browser:
+The library supports 3 ways to manage the browser for JavaScript-rendered content.
+
+#### 1. Automatic (Default)
+
+The browser is created automatically when needed and reused within the same context. Functions like `get_anime_info`, `get_table_download_links`, etc. will open the browser if not already open, or reuse it if another function already opened it within the same `async with` block:
 
 ```python
 import asyncio
-
-from ani_scrapy import AsyncBrowser
-
+from ani_scrapy import JKAnimeScraper
 
 async def main():
-    async with AsyncBrowser(headless=True) as browser:
-        page = await browser.new_page()
-        await page.goto("https://example.com")
-        # Your custom browser automation here
+    async with JKAnimeScraper() as scraper:
+        # get_anime_info opens the browser internally
+        info = await scraper.get_anime_info("gachiakuta", include_episodes=True)
+        # get_table_download_links reuses the same browser
+        links = await scraper.get_table_download_links("gachiakuta", episode=1)
+    # Browser automatically closed when exiting context
 
+asyncio.run(main())
+```
 
-if __name__ == "__main__":
-    asyncio.run(main())
+#### 2. Manual Start/Stop
+
+Use this pattern when you need explicit control over the browser lifecycle without using `async with`, or for programmatic usage. All functions in the scraper will use the same manually opened browser:
+
+```python
+import asyncio
+from ani_scrapy import JKAnimeScraper
+
+async def scrape_anime(anime_id: str):
+    scraper = JKAnimeScraper()
+    
+    await scraper.start_browser()  # Open browser explicitly
+    
+    # All functions use the same browser instance
+    info = await scraper.get_anime_info(anime_id, include_episodes=True)
+    links = await scraper.get_table_download_links(anime_id, episode=1)
+    final_url = await scraper.get_file_download_link(links.download_links[0])
+    
+    await scraper.stop_browser()  # Close browser explicitly
+    await scraper.aclose()         # Close scraper resources
+
+asyncio.run(scrape_anime("gachiakuta"))
+```
+
+#### 3. External Browser Injection
+
+Use an externally created `AsyncBrowser` instance. All scraper functions will use the injected browser:
+
+```python
+import asyncio
+from ani_scrapy import AsyncBrowser, JKAnimeScraper
+
+async def main():
+    # Create browser with custom executable
+    brave_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+    
+    async with AsyncBrowser(headless=True, executable_path=brave_path) as browser:
+        # Inject external browser into scraper
+        async with JKAnimeScraper(external_browser=browser) as scraper:
+            # All functions use the injected browser
+            info = await scraper.get_anime_info("gachiakuta")
+            print(f"Title: {info.title}")
+        # Browser stays open - controlled externally
+
+asyncio.run(main())
+```
+
+### When to Use Each Pattern
+
+| Pattern | Use Case |
+|---------|----------|
+| **1. Automatic** | Most cases - simple and automatic |
+| **2. Manual** | Programmatic use without `async with`, fine-grained control |
+| **3. External** | Share browser across scrapers, custom browser config |
+
+### Custom Browser Path
+
+```python
+# Brave (Recommended for sites with ads)
+brave_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+
+# Chrome
+chrome_path = "C:/Program Files/Google/Chrome/Application/chrome.exe"
+
+# Linux
+brave_path = "/usr/bin/brave"
+
+# macOS
+brave_path = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
 ```
 
 ### Error Handling
