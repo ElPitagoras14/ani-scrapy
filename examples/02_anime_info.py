@@ -67,7 +67,9 @@ async def main():
     """Run the anime info example."""
     rprint("[bold cyan]=== Example 02: Get Anime Information[/bold cyan]\n")
 
-    async with AnimeFLVScraper(headless=True) as scraper:
+    async with AnimeFLVScraper(
+        headless=True, executable_path=BRAVE_PATH
+    ) as scraper:
         anime_id = "gachiakuta"
 
         rprint(f"[bold]Fetching info for:[/bold] '{anime_id}'\n")
@@ -100,8 +102,6 @@ async def main():
                 )
 
         rprint(f"\n[dim]Elapsed time: {elapsed:.2f}s[/dim]")
-
-    # JKAnime with local Brave browser
 
     async with JKAnimeScraper(
         headless=True,

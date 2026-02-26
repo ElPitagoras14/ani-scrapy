@@ -20,9 +20,11 @@ class AsyncBrowser:
         self.args = args
         self.playwright = None
         self.browser = None
+        self._playwright_cm = None
 
     async def __aenter__(self):
-        self.playwright = await async_playwright().start()
+        self._playwright_cm = async_playwright()
+        self.playwright = await self._playwright_cm.__aenter__()
         launch_options = {
             "headless": self.headless,
             "args": [
@@ -39,9 +41,12 @@ class AsyncBrowser:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.context.close()
-        await self.browser.close()
-        await self.playwright.stop()
+        if self.context:
+            await self.context.close()
+        if self.browser:
+            await self.browser.close()
+        if self._playwright_cm:
+            await self._playwright_cm.__aexit__(exc_type, exc_val, exc_tb)
 
     async def new_page(self):
         """Create a new page in the browser."""

@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from typing import Optional
 from urllib.parse import quote
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
@@ -37,10 +38,12 @@ class JKAnimeScraper(BaseScraper):
         self,
         headless: bool = True,
         executable_path: str = "",
+        external_browser: Optional[AsyncBrowser] = None,
     ):
         super().__init__(
             headless=headless,
             executable_path=executable_path,
+            external_browser=external_browser,
         )
         self.http = AsyncHttpAdapter(base_url=BASE_URL)
         self.parser = JKAnimeParser()
@@ -121,18 +124,12 @@ class JKAnimeScraper(BaseScraper):
         log.info("Getting anime info | anime_id={anime_id}", anime_id=anime_id)
 
         if include_episodes:
-            executable_path = (
-                self.executable_path if self.executable_path else None
-            )
             url = f"{BASE_URL}/{anime_id}"
-            async with AsyncBrowser(
-                executable_path=executable_path,
-                headless=self.headless,
-            ) as browser:
-                async with await browser.new_page() as page:
-                    return await self._get_anime_info_with_episodes(
-                        page, url, anime_id
-                    )
+            browser = await self._get_browser()
+            async with await browser.new_page() as page:
+                return await self._get_anime_info_with_episodes(
+                    page, url, anime_id
+                )
 
         try:
             html_text = await self.http.get(anime_id)
@@ -283,17 +280,11 @@ class JKAnimeScraper(BaseScraper):
 
         url = f"{BASE_URL}/{anime_id}"
 
-        executable_path = (
-            self.executable_path if self.executable_path else None
-        )
-        async with AsyncBrowser(
-            executable_path=executable_path,
-            headless=self.headless,
-        ) as browser:
-            async with await browser.new_page() as page:
-                return await self._get_new_episodes_internal(
-                    page, url, anime_id, last_episode_number
-                )
+        browser = await self._get_browser()
+        async with await browser.new_page() as page:
+            return await self._get_new_episodes_internal(
+                page, url, anime_id, last_episode_number
+            )
 
     async def _get_new_episodes_internal(
         self,
@@ -448,17 +439,11 @@ class JKAnimeScraper(BaseScraper):
             episode_number=episode_number,
         )
 
-        executable_path = (
-            self.executable_path if self.executable_path else None
-        )
-        async with AsyncBrowser(
-            executable_path=executable_path,
-            headless=self.headless,
-        ) as browser:
-            async with await browser.new_page() as page:
-                return await self._get_table_download_links_internal(
-                    page, anime_id, episode_number
-                )
+        browser = await self._get_browser()
+        async with await browser.new_page() as page:
+            return await self._get_table_download_links_internal(
+                page, anime_id, episode_number
+            )
 
     async def _get_table_download_links_internal(
         self,
@@ -528,15 +513,9 @@ class JKAnimeScraper(BaseScraper):
             )
             return None
 
-        executable_path = (
-            self.executable_path if self.executable_path else None
-        )
-        async with AsyncBrowser(
-            executable_path=executable_path,
-            headless=self.headless,
-        ) as browser:
-            async with await browser.new_page() as page:
-                return await self._file_link_getters[server](page, url)
+        browser = await self._get_browser()
+        async with await browser.new_page() as page:
+            return await self._file_link_getters[server](page, url)
 
     async def _get_streamwish_file_link(self, page, url: str) -> str | None:
         """Get Streamwish file download link."""
@@ -606,5 +585,6 @@ class JKAnimeScraper(BaseScraper):
         return real_url
 
     async def aclose(self) -> None:
-        """Cleanup resources."""
+        """Close resources."""
         await self.http.close()
+        await super().aclose()

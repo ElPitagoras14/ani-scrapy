@@ -257,6 +257,31 @@ Resolves final download URLs from intermediate links.
 - `ValueError` for unsupported servers
 - `ScraperTimeoutError` on timeout
 
+#### Resource Management
+
+Both scrapers implement the async context manager protocol:
+
+```python
+async with AnimeFLVScraper() as scraper:
+    # ... use scraper
+# Resources are automatically closed here
+```
+
+You can also manually close resources using `aclose()`:
+
+```python
+scraper = AnimeFLVScraper()
+try:
+    info = await scraper.get_anime_info("anime-id")
+finally:
+    await scraper.aclose()  # Always close to release resources
+```
+
+The `aclose()` method ensures:
+- HTTP session is closed
+- Browser (if created) is closed
+- Playwright context is properly cleaned up
+
 ---
 
 ## Supported Servers

@@ -1,6 +1,7 @@
 """AnimeFLV scraper."""
 
 import asyncio
+from typing import Optional
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from loguru import logger
@@ -36,10 +37,12 @@ class AnimeFLVScraper(BaseScraper):
         self,
         headless: bool = True,
         executable_path: str = "",
+        external_browser: Optional[AsyncBrowser] = None,
     ):
         super().__init__(
             headless=headless,
             executable_path=executable_path,
+            external_browser=external_browser,
         )
         self.http = AsyncHttpAdapter(base_url=BASE_URL)
         self.parser = AnimeFLVParser()
@@ -185,17 +188,9 @@ class AnimeFLVScraper(BaseScraper):
 
         url = f"{ANIME_VIDEO_ENDPOINT}/{anime_id}-{episode_number}"
 
-        executable_path = (
-            self.executable_path if self.executable_path else None
-        )
-        async with AsyncBrowser(
-            executable_path=executable_path,
-            headless=self.headless,
-        ) as browser:
-            async with await browser.new_page() as page:
-                return await self._get_iframe_download_links_internal(
-                    page, url
-                )
+        browser = await self._get_browser()
+        async with await browser.new_page() as page:
+            return await self._get_iframe_download_links_internal(page, url)
 
     async def _fetch_and_parse_info(
         self, anime_id: str, include_episodes: bool
@@ -300,16 +295,10 @@ class AnimeFLVScraper(BaseScraper):
             )
             return None
 
-        executable_path = (
-            self.executable_path if self.executable_path else None
-        )
-        async with AsyncBrowser(
-            executable_path=executable_path,
-            headless=self.headless,
-        ) as browser:
-            async with await browser.new_page() as page:
-                page.on("popup", lambda popup: popup.close())
-                return await self._file_link_getters[server](page, url)
+        browser = await self._get_browser()
+        async with await browser.new_page() as page:
+            page.on("popup", lambda popup: popup.close())
+            return await self._file_link_getters[server](page, url)
 
     async def _get_sw_link(self, page):
         """Get SW server link."""
@@ -407,3 +396,4 @@ class AnimeFLVScraper(BaseScraper):
     async def aclose(self) -> None:
         """Cleanup resources."""
         await self.http.close()
+        await super().aclose()

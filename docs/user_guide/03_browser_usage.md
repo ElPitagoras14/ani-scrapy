@@ -48,6 +48,66 @@ if __name__ == "__main__":
 
 ---
 
+## Reusing Browser for Multiple Operations
+
+By default, the browser is created automatically when needed and closed after each operation. For better performance when performing multiple browser-based operations, you can manually control the browser lifecycle.
+
+### Manual Start/Stop
+
+```python
+import asyncio
+
+from ani_scrapy import JKAnimeScraper
+
+
+async def main() -> None:
+    async with JKAnimeScraper(headless=True) as scraper:
+        # Start browser manually
+        await scraper.start_browser()
+
+        # Multiple operations use the same browser
+        info = await scraper.get_anime_info("anime-id", include_episodes=True)
+        links = await scraper.get_table_download_links("anime-id", episode=1)
+        final_url = await scraper.get_file_download_link(links.download_links[0])
+
+        # Stop when done (optional - also called automatically on scraper close)
+        await scraper.stop_browser()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Benefits
+
+- **Performance**: Reuses a single browser instance instead of creating new ones
+- **Resource efficient**: Lower memory and CPU usage
+- **Faster**: Avoids browser startup overhead for each operation
+
+### Injecting External Browser
+
+You can also inject an external `AsyncBrowser` instance:
+
+```python
+import asyncio
+
+from ani_scrapy import AsyncBrowser, JKAnimeScraper
+
+
+async def main() -> None:
+    async with AsyncBrowser(headless=True) as browser:
+        # Inject external browser into scraper
+        async with JKAnimeScraper(external_browser=browser) as scraper:
+            # All browser operations use the injected browser
+            info = await scraper.get_anime_info("anime-id")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
 ## Custom Browser (Brave Recommended)
 
 You can configure a custom browser executable path. Brave is recommended because its native ad-blocker reduces blocking on sites with excessive advertisements, but any Chromium-based browser (Chrome, Chromium, Edge) will work.
