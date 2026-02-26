@@ -128,17 +128,23 @@ The library follows a layered architecture:
 
 ### Context Manager Pattern
 
-All scrapers support both sync and async context managers:
+All scrapers use async context managers:
 
 ```python
-# Async context manager (recommended)
+# Async context manager (required)
 async with AnimeFLVScraper() as scraper:
     results = await scraper.search_anime("naruto")
+# Resources are automatically closed here
+```
 
-# Sync context manager
-with AnimeFLVScraper() as scraper:
-    # Only close() is available, not async methods
-    scraper.close()
+For manual resource management, use `aclose()`:
+
+```python
+scraper = AnimeFLVScraper()
+try:
+    results = await scraper.search_anime("naruto")
+finally:
+    await scraper.aclose()  # Always close to release resources
 ```
 
 ### Content Extraction Methods
@@ -170,19 +176,23 @@ class BaseScraper(ABC):
         self,
         headless: bool = True,
         executable_path: str = "",
+        external_browser: Optional[AsyncBrowser] = None,
     ) -> None:
         """Initialize the scraper.
 
         Args:
             headless: Whether to run browser in headless mode. Default: True.
             executable_path: Path to custom browser executable (e.g., Brave).
+            external_browser: Inject an existing AsyncBrowser instance.
         """
 ```
 
 **Methods**:
 
-- `close()`: Synchronous resource cleanup
-- `aclose()`: Async resource cleanup
+- `aclose()`: Async resource cleanup (closes HTTP, browser, playwright)
+- `start_browser()`: Manually start browser for reuse across operations
+- `stop_browser()`: Manually stop the browser
+- `_get_browser()`: Get browser instance (internal use)
 
 ### 5.3 Logging
 
@@ -529,6 +539,44 @@ async def main():
 asyncio.run(main())
 ```
 
+### Browser Usage Patterns
+
+#### Pattern 1: Automatic (Default)
+
+Browser is created automatically when needed and closed after each operation:
+
+```python
+async with JKAnimeScraper() as scraper:
+    info = await scraper.get_anime_info("anime-id", include_episodes=True)
+# Browser automatically closed
+```
+
+#### Pattern 2: Manual Start/Stop
+
+Reuse browser for multiple operations to improve performance:
+
+```python
+async with JKAnimeScraper() as scraper:
+    await scraper.start_browser()  # Start manually
+    
+    info = await scraper.get_anime_info("anime-id", include_episodes=True)
+    links = await scraper.get_table_download_links("anime-id", episode=1)
+    final_url = await scraper.get_file_download_link(links.download_links[0])
+    
+    await scraper.stop_browser()  # Optional - also called on aclose()
+```
+
+#### Pattern 3: External Browser Injection
+
+Inject an existing AsyncBrowser instance:
+
+```python
+async with AsyncBrowser(headless=True) as browser:
+    async with JKAnimeScraper(external_browser=browser) as scraper:
+        info = await scraper.get_anime_info("anime-id")
+        # Uses the injected browser
+```
+
 ## 7. Common Task Recipes
 
 ### Recipe 1: Configure Logging
@@ -737,6 +785,34 @@ for ep in info.episodes:
 2. **Missing optional fields**: `rating`, `other_titles`, `genres` may be empty
 3. **None in episodes list**: Some positions may contain None
 4. **Download link unavailable**: `url` field may be None in `DownloadLinkInfo`
+
+### Windows-Specific Issues
+
+On Windows with Python 3.14+, you may see warnings at script exit:
+
+```
+Exception ignored in: _ProactorBasePipeTransport.__del__
+ValueError: I/O operation on closed pipe
+```
+
+This is a known issue with Python's ProactorEventLoop and Playwright's subprocess cleanup timing. The script runs correctly - these are cosmetic warnings.
+
+**Solutions:**
+
+1. Use `asyncio.run()` (recommended):
+```python
+asyncio.run(main())
+```
+
+2. For Python 3.10-3.13, use:
+```python
+asyncio.get_event_loop().run_until_complete(main())
+```
+
+**Notes:**
+- These warnings are cosmetic only - the script works correctly
+- This only affects Windows; Linux/macOS are unaffected
+- The library properly closes all resources (browser, context, playwright) via `aclose()`
 
 ## 10. Internal Architecture Summary (For Reasoning)
 
