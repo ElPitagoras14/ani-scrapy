@@ -172,24 +172,6 @@ Labels: Recommended labels
 - `bug` - bug fixes (type: fix)
 - `maintenance` - refactor, chore, docs, etc.
 
-PR description template:
-
-```markdown
-## Description
-
-Brief explanation of the change.
-
-## Changes
-
-- Added JWT authentication
-- Added token validation middleware
-- Updated login endpoint
-
-## Related issue (Optional)
-
-Closes #123
-```
-
 GitHub CLI:
 
 ```bash
