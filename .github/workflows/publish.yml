@@ -6,7 +6,73 @@ on:
       - main
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version-changed: ${{ steps.compare.outputs.version-changed }}
+      new-version: ${{ steps.compare.outputs.new-version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get current version from pyproject.toml
+        id: current-version
+        run: |
+          VERSION=$(grep -E '^version\s*=' pyproject.toml | sed 's/version\s*=\s*"\([^"]*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Get latest tag
+        id: latest-tag
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        id: compare
+        run: |
+          CURRENT="${{ steps.current-version.outputs.version }}"
+          LATEST="${{ steps.latest-tag.outputs.tag }}"
+
+          if [ "$CURRENT" = "$LATEST" ]; then
+            echo "version-changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "version-changed=true" >> $GITHUB_OUTPUT
+          fi
+          echo "new-version=$CURRENT" >> $GITHUB_OUTPUT
+
+  release:
+    needs: check-version
+    if: ${{ needs.check-version.outputs.version-changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ needs.check-version.outputs.new-version }}
+
+      - name: Push Tag
+        run: git push origin ${{ needs.check-version.outputs.new-version }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.check-version.outputs.new-version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   publish:
+    needs: release
+    if: ${{ needs.check-version.outputs.version-changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -26,6 +92,6 @@ jobs:
 
       - name: Publish to PyPI
         env:
-            UV_PUBLISH_USERNAME: __token__
-            UV_PUBLISH_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          UV_PUBLISH_USERNAME: __token__
+          UV_PUBLISH_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: uv publish
