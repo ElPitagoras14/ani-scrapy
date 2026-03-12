@@ -164,6 +164,14 @@ git push
 
 Title format: Same as commit convention
 
+Body: PR description template
+
+Labels: Recommended labels
+
+- `feature` - new features (type: feat)
+- `bug` - bug fixes (type: fix)
+- `maintenance` - refactor, chore, docs, etc.
+
 PR description template:
 
 ```markdown
@@ -186,9 +194,5 @@ GitHub CLI:
 
 ```bash
 # Create PR
-gh pr create \
-  --title "feat(auth): add JWT authentication" \
-  --body "Adds JWT authentication and middleware validation." \
-  --base main \
-  --head feat/add-user-authentication
+gh pr create --fill --label feature
 ```
