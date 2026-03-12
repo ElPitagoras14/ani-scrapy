@@ -12,24 +12,6 @@ from typing import Dict, List, Optional, Tuple
 import aiohttp
 from rich import print as rprint
 
-# Force UTF-8 for Windows
-if sys.platform == "win32":
-    import io
-
-    sys.stdout = io.TextIOWrapper(
-        sys.stdout.buffer, encoding="utf-8", errors="replace"
-    )
-    sys.stderr = io.TextIOWrapper(
-        sys.stderr.buffer, encoding="utf-8", errors="replace"
-    )
-
-try:
-    import playwright
-
-    PLAYWRIGHT_AVAILABLE = True
-except ImportError:
-    PLAYWRIGHT_AVAILABLE = False
-
 
 @dataclass
 class DiagnosticResult:
@@ -96,17 +78,6 @@ class AniScrapyDoctor:
         ],
     }
 
-    # Python dependencies to check
-    DEPENDENCIES = {
-        "ani-scrapy": "ani_scrapy",
-        "aiohttp": "aiohttp",
-        "beautifulsoup4": "bs4",
-        "loguru": "loguru",
-        "playwright": "playwright",
-        "rich": "rich",
-        "typer": "typer",
-    }
-
     # Sites to check connectivity
     CONNECTIVITY_SITES = {
         "animeflv.net": "https://animeflv.net",
@@ -120,7 +91,6 @@ class AniScrapyDoctor:
     def run(self) -> DoctorReport:
         """Run all diagnostic checks."""
         self._check_environment()
-        self._check_dependencies()
         self._check_playwright()
         self._check_brave()
         asyncio.run(self._check_connectivity())
@@ -173,7 +143,9 @@ class AniScrapyDoctor:
         ram = self._get_system_ram()
         env_info["ram"] = ram
 
-        message = f"Python {env_info['python_version']} ({env_info['platform']}) - {ram} RAM"
+        message = (
+            f"Python {env_info['python_version']} ({env_info['platform']}) - {ram} RAM"
+        )
 
         self._add_result(
             category="Environment",
@@ -200,7 +172,7 @@ class AniScrapyDoctor:
                 for line in output.splitlines():
                     if "TotalVisibleMemorySize" in line:
                         kb = int(line.split("=")[1])
-                        return f"{kb // (1024*1024)}GB"
+                        return f"{kb // (1024 * 1024)}GB"
             else:
                 output = subprocess.check_output(["free", "-m"], text=True)
                 lines = output.split("\n")
@@ -214,38 +186,8 @@ class AniScrapyDoctor:
 
         return "Unknown"
 
-    def _check_dependencies(self) -> None:
-        """Check Python dependencies."""
-        for package, module in self.DEPENDENCIES.items():
-            try:
-                mod = self._import_module(module)
-                version = getattr(mod, "__version__", "unknown")
-                self._add_result(
-                    category="Dependencies",
-                    name=package,
-                    status=self.STATUS_PASS,
-                    message=f"Installed (v{version})",
-                    details={"version": version},
-                )
-            except ImportError:
-                self._add_result(
-                    category="Dependencies",
-                    name=package,
-                    status=self.STATUS_FAIL,
-                    message="Not installed",
-                )
-
     def _check_playwright(self) -> None:
         """Check Playwright installation."""
-        if not PLAYWRIGHT_AVAILABLE:
-            self._add_result(
-                category="Playwright",
-                name="Installation",
-                status=self.STATUS_FAIL,
-                message="Playwright not installed",
-            )
-            return
-
         try:
             from playwright.sync_api import sync_playwright
 
@@ -354,19 +296,6 @@ class AniScrapyDoctor:
                         details={"url": url, "error": str(e)[:50]},
                     )
 
-    def _import_module(self, module_name: str):
-        """Import a module by name."""
-        if module_name == "ani_scrapy":
-            import ani_scrapy
-
-            return ani_scrapy
-        elif module_name == "bs4":
-            import bs4
-
-            return bs4
-        else:
-            return __import__(module_name)
-
     def _get_environment_info(self) -> Dict:
         """Get environment information."""
         return {
@@ -389,12 +318,8 @@ class AniScrapyDoctor:
     def _generate_summary(self) -> str:
         """Generate summary message."""
         has_fail, has_warn = self._get_status_summary()
-        fail_count = sum(
-            1 for r in self.results if r.status == self.STATUS_FAIL
-        )
-        warn_count = sum(
-            1 for r in self.results if r.status == self.STATUS_WARN
-        )
+        fail_count = sum(1 for r in self.results if r.status == self.STATUS_FAIL)
+        warn_count = sum(1 for r in self.results if r.status == self.STATUS_WARN)
 
         if not has_fail and not has_warn:
             return "No issues found. Star Brave for better success rates!"
@@ -439,9 +364,7 @@ class AniScrapyDoctor:
         for category, cat_results in categories.items():
             self._print_category(category, cat_results)
 
-    def _print_category(
-        self, category: str, results: List[DiagnosticResult]
-    ) -> None:
+    def _print_category(self, category: str, results: List[DiagnosticResult]) -> None:
         """Print a category section."""
         # Get statuses for category
         statuses = [r.status for r in results]

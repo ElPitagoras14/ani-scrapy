@@ -1,44 +1,5 @@
 # Agent Guidelines for ani-scrapy
 
-This document defines how an LLM or coding agent should reason and behave when helping to plan, design, or implement this project. These guidelines apply to all analysis, planning, design, and code-related assistance within this repository.
-
----
-
-## Role
-
-You act as a software architect and senior developer. Your goal is to help plan, design, and evolve the project in a clear, modern, and pragmatic way. Prioritize long-term maintainability and clarity over short-term speed.
-
----
-
-## Commands
-
-### Installation
-
-```bash
-pip install -e ".[dev]"        # Install with dev dependencies
-pip install -e "."              # Install without dev dependencies
-pip install -e ".[examples]"   # Install with examples dependencies
-```
-
-### Testing
-
-```bash
-pytest tests/                              # all tests
-pytest tests/unit/test_file.py              # single file
-pytest tests/unit/test_file.py::test_func  # single test
-pytest tests/ -v                           # verbose output
-pytest tests/ -k "test_name"              # run tests matching pattern
-```
-
-### Linting and Type Checking
-
-```bash
-# Currently, no formal linting configured
-# Code style follows Python standard conventions
-```
-
----
-
 ## Code Style Guidelines
 
 ### Package Management
@@ -50,33 +11,12 @@ pytest tests/ -k "test_name"              # run tests matching pattern
 - Group imports in this order: standard library, third-party, local application
 - Use absolute imports for package modules
 - Sort imports alphabetically within each group
-
-```python
-# Correct
-import asyncio
-from pathlib import Path
-from typing import Optional
-
-import aiohttp
-from rich import print as rprint
-
-from ani_scrapy.core.base import BaseScraper
-```
+- Don't use conditional imports
 
 ### Types
 
-- Use type hints for function signatures
-- Use `Optional[T]` instead of `T | None`
-- Use `List[T]`, `Dict[K, V]` from `typing`
+- Use type hints for function signatures (Python 3.10+)
 - Avoid `Any` - be specific when possible
-
-```python
-async def search_anime(
-    self,
-    query: str,
-    page: int = 1,
-) -> PagedSearchAnimeInfo:
-```
 
 ### Naming Conventions
 
@@ -88,32 +28,13 @@ async def search_anime(
 ### Async/Await Patterns
 
 - Prefer async/await throughout the codebase
-- Provide both sync and async context managers when appropriate
-- Use `async def __aenter__` and `async def __aexit__`
-- Always handle `aiohttp.ClientSession` properly with async context
-
-```python
-async def __aenter__(self) -> "AsyncBrowser":
-    return self
-
-async def __aexit__(self, *args) -> None:
-    await self.aclose()
-```
+- Provide async context managers when appropriate
 
 ### Error Handling
 
 - Use custom exception hierarchy: `ScraperError` -> `ScraperTimeoutError`, `ScraperParseError`, `ScraperBlockedError`
 - Log errors with `loguru.logger`
 - Use context managers for resource cleanup
-- Define exceptions in `src/ani_scrapy/core/exceptions.py`
-
-```python
-class ScraperError(Exception):
-    """Base exception for all scraping-related errors."""
-
-class ScraperTimeoutError(ScraperError):
-    """Failed to fetch due to a timeout."""
-```
 
 ### Logging
 
@@ -122,16 +43,6 @@ class ScraperTimeoutError(ScraperError):
 - Never call `logger.remove()` or modify global handlers in library code
 - For simple scripts, users can configure Loguru before using scrapers
 
-```python
-# In your application startup:
-from loguru import logger
-logger.configure(handlers=[...])
-
-# In scraper code:
-from loguru import logger
-logger.info("Message")
-```
-
 ### Comments
 
 - Avoid comments unless explaining complex logic
@@ -139,55 +50,12 @@ logger.info("Message")
 - Keep docstrings concise and focused on parameters and return values
 - NO comments in code unless absolutely necessary (per project rules)
 
-### File Structure
-
-```
-src/ani_scrapy/
-├── __init__.py              # Public exports
-├── animeflv/
-│   ├── __init__.py
-│   ├── scraper.py          # Coordination logic
-│   ├── parser.py           # HTML parsing
-│   └── constants.py       # Site-specific constants
-├── jkanime/
-│   ├── __init__.py
-│   ├── scraper.py
-│   ├── parser.py
-│   └── constants.py
-├── core/
-│   ├── __init__.py
-│   ├── base.py             # BaseScraper, logging utilities
-│   ├── http.py            # HTTP adapters
-│   ├── browser.py         # Playwright browser
-│   ├── schemas.py         # Pydantic/data classes
-│   ├── exceptions.py      # Exception hierarchy
-│   ├── constants/
-│   │   ├── __init__.py
-│   │   └── general.py      # General constants
-└── cli/
-    ├── __init__.py
-    ├── main.py             # CLI entry point (ani-scrapy doctor)
-    └── doctor.py           # Diagnostic tool
-```
-
 ### CLI Commands
 
 - Use `typer` for CLI commands
 - Entry point: `ani-scrapy` with subcommands
 - Diagnostic command: `ani-scrapy doctor`
 - Include `--help` for all commands
-- Use `typer.echo()` for output
-
-```python
-@app.command()
-def doctor(
-    output: str = typer.Option("text", "--output", "-o"),
-    timeout: int = typer.Option(5, "--timeout", "-t"),
-):
-    """Run ani-scrapy doctor diagnostic tool."""
-```
-
----
 
 ## Project Principles
 
@@ -211,22 +79,116 @@ def doctor(
 
 ## Git Conventions
 
-Use **Conventional Commits** for all commit messages:
+Ignore `tasks` folder in commits
 
-```
-<type>: <short description>
-```
+### Branch Naming Convention
 
-**Types**: `feat`, `fix`, `chore`, `refactor`, `docs`, `style`, `perf`, `ci`
+Format: `<type>/<short-description>`
 
-Commit with title only:
+Rules:
+
+- use kebab-case
+- keep short and descriptive
+- prefix with change type
+
+Minimal types:
+
+- `feat` -> new feature
+- `fix` -> bug fix
+- `refactor` -> code improvement without behavior change
+- `chore` -> maintenance, config, dependencies, CI, docs
+
+Git CLI:
 
 ```bash
-git commit -m "feat: add episode download endpoint"
+# Create branch
+git checkout -b feat/add-user-authentication
+
+# Push branch
+git push -u origin feat/add-user-authentication
 ```
 
-Commit with title and optional description:
+---
+
+### Commit Message Convention
+
+Header format: `<type>(scope): <short description>`
+
+Rules:
+
+- lowercase
+- imperative mood
+- max ~72 chars
+- scope optional
+- use body description for longer descriptions
+
+Minimal types:
+
+- `feat` -> new feature
+- `fix` -> bug fix
+- `refactor` -> code improvement without behavior change
+- `chore` -> maintenance, dependencies, CI, docs
+
+Examples:
+
+```
+feat(auth): add JWT authentication
+```
+
+```
+feat(discovery): implement SNMP device discovery
+
+Adds SNMP-based discovery to automatically detect devices
+in a network segment.
+
+This allows network engineers to bootstrap inventory faster.
+```
+
+Optional body:
 
 ```bash
-git commit -m "feat: add episode download endpoint" -m "Supports both single and bulk downloads. Dispatches tasks to the queue via Celery."
+git commit -m "feat(auth): add JWT authentication" -m "Adds JWT middleware and token validation."
+```
+
+Git CLI:
+
+```bash
+git add .
+git commit -m "feat(auth): add JWT authentication"
+git push
+```
+
+---
+
+### Pull Request Convention
+
+Title format: Same as commit convention
+
+PR description template:
+
+```markdown
+## Description
+
+Brief explanation of the change.
+
+## Changes
+
+- Added JWT authentication
+- Added token validation middleware
+- Updated login endpoint
+
+## Related issue (Optional)
+
+Closes #123
+```
+
+GitHub CLI:
+
+```bash
+# Create PR
+gh pr create \
+  --title "feat(auth): add JWT authentication" \
+  --body "Adds JWT authentication and middleware validation." \
+  --base main \
+  --head feat/add-user-authentication
 ```
