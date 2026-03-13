@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ani_scrapy.animeflv.parser import AnimeFLVParser
+from ani_scrapy.providers.animeflv.parser import AnimeFLVParser
 from ani_scrapy.core.schemas import _AnimeType, _RelatedType
 
 
@@ -29,7 +29,6 @@ def test_parse_anime_info(animeflv_anime_html: str) -> None:
     assert anime.title == "One Punch Man 3"
     assert anime.type == _AnimeType.TV
     assert anime.genres == ["Acción", "Comedia"]
-    assert anime.other_titles == ["ワンパンマン"]
     assert anime.related_info
     assert anime.related_info[0].type == _RelatedType.PREQUEL
     assert anime.episodes

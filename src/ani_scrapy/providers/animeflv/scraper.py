@@ -4,17 +4,18 @@ import asyncio
 from typing import Optional
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
-from loguru import logger
+from ani_scrapy.core.log import logger
 
 from ani_scrapy.core.base import BaseScraper
 from ani_scrapy.core.browser import AsyncBrowser
 from ani_scrapy.core.http import AsyncHttpAdapter
-from ani_scrapy.animeflv.parser import AnimeFLVParser
-from ani_scrapy.animeflv.constants import (
+from ani_scrapy.providers.animeflv.parser import AnimeFLVParser
+from ani_scrapy.providers.animeflv.constants import (
     BASE_URL,
     ANIME_VIDEO_ENDPOINT,
     BASE_EPISODE_IMG_URL,
     SW_DOWNLOAD_URL,
+    SUPPORTED_SERVERS,
 )
 from ani_scrapy.core.constants.general import (
     SW_TIMEOUT,
@@ -63,8 +64,8 @@ class AnimeFLVScraper(BaseScraper):
         page: int = 1,
     ) -> PagedSearchAnimeInfo:
         """Search anime."""
-        log = logger
-        log.info("Searching anime | query={query}", query=query)
+
+        logger.info("Searching anime | query={query}", query=query)
 
         if page < 1:
             raise ValueError("The variable 'page' must be greater than 0")
@@ -72,7 +73,7 @@ class AnimeFLVScraper(BaseScraper):
         html = await self.http.get("browse", params={"q": query, "page": page})
         animes = self.parser.parse_search_results(html)
 
-        log.info("Search completed | count={count}", count=len(animes))
+        logger.info("Search completed | count={count}", count=len(animes))
 
         return PagedSearchAnimeInfo(
             page=page,
@@ -86,12 +87,12 @@ class AnimeFLVScraper(BaseScraper):
         include_episodes: bool = True,
     ) -> AnimeInfo:
         """Get anime info."""
-        log = logger
-        log.info("Getting anime info | anime_id={anime_id}", anime_id=anime_id)
+
+        logger.info("Getting anime info | anime_id={anime_id}", anime_id=anime_id)
 
         anime = await self._fetch_and_parse_info(anime_id, include_episodes)
 
-        log.info("Anime info fetched")
+        logger.info("Anime info fetched")
         return anime
 
     async def get_new_episodes(
@@ -100,8 +101,8 @@ class AnimeFLVScraper(BaseScraper):
         last_episode_number: int,
     ) -> list[EpisodeInfo]:
         """Get new episodes since last_episode_number."""
-        log = logger
-        log.info(
+
+        logger.info(
             "Getting new episodes | anime_id={anime_id} last_episode_number={last_episode_number}",
             anime_id=anime_id,
             last_episode_number=last_episode_number,
@@ -121,9 +122,7 @@ class AnimeFLVScraper(BaseScraper):
             if number <= last_episode_number:
                 break
 
-            image_prev = (
-                f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{number}/th_3.jpg"
-            )
+            image_prev = f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{number}/th_3.jpg"
             episodes.append(
                 EpisodeInfo(
                     number=number,
@@ -132,7 +131,7 @@ class AnimeFLVScraper(BaseScraper):
                 )
             )
 
-        log.info("New episodes fetched | count={count}", count=len(episodes))
+        logger.info("New episodes fetched | count={count}", count=len(episodes))
         return list(reversed(episodes))
 
     async def get_table_download_links(
@@ -141,8 +140,8 @@ class AnimeFLVScraper(BaseScraper):
         episode_number: int,
     ) -> EpisodeDownloadInfo:
         """Get table download links for an episode."""
-        log = logger
-        log.info(
+
+        logger.info(
             "Getting table download links | anime_id={anime_id} episode_number={episode_number}",
             anime_id=anime_id,
             episode_number=episode_number,
@@ -150,8 +149,7 @@ class AnimeFLVScraper(BaseScraper):
 
         if episode_number < 0:
             raise ValueError(
-                "The variable 'episode_number' must be greater than "
-                + "or equal to 0"
+                "The variable 'episode_number' must be greater than " + "or equal to 0"
             )
 
         url = f"{ANIME_VIDEO_ENDPOINT}/{anime_id}-{episode_number}"
@@ -165,9 +163,7 @@ class AnimeFLVScraper(BaseScraper):
             for link in download_links_data
         ]
 
-        log.info(
-            "Table download links fetched | count={count}", count=len(rows)
-        )
+        logger.info("Table download links fetched | count={count}", count=len(rows))
         return EpisodeDownloadInfo(
             episode_number=episode_number,
             download_links=rows,
@@ -179,8 +175,8 @@ class AnimeFLVScraper(BaseScraper):
         episode_number: int,
     ) -> EpisodeDownloadInfo:
         """Get iframe download links for an episode."""
-        log = logger
-        log.info(
+
+        logger.info(
             "Getting iframe download links | anime_id={anime_id} episode_number={episode_number}",
             anime_id=anime_id,
             episode_number=episode_number,
@@ -205,8 +201,6 @@ class AnimeFLVScraper(BaseScraper):
 
     async def _get_iframe_download_links_internal(self, page, url):
         """Internal method for getting iframe download links."""
-
-        log = logger
 
         async def close_not_allowed_popups(popup) -> None:
             try:
@@ -249,7 +243,7 @@ class AnimeFLVScraper(BaseScraper):
                         )
                     )
             except Exception as e:
-                log.warning(
+                logger.warning(
                     "Failed to get link for server | server={server} error={error}",
                     server=server_name,
                     error=str(e),
@@ -261,7 +255,7 @@ class AnimeFLVScraper(BaseScraper):
                     )
                 )
 
-        log.info(
+        logger.info(
             "Iframe download links fetched | count={count}",
             count=len(download_links),
         )
@@ -275,7 +269,6 @@ class AnimeFLVScraper(BaseScraper):
         download_info: DownloadLinkInfo,
     ) -> str | None:
         """Get file download link for a download link info object."""
-        log = logger
 
         if not isinstance(download_info, DownloadLinkInfo):
             raise TypeError("download_info must be a DownloadLinkInfo object")
@@ -286,12 +279,13 @@ class AnimeFLVScraper(BaseScraper):
         if url is None:
             return None
 
-        log.info("Getting file download link | server={server}", server=server)
+        logger.info("Getting file download link | server={server}", server=server)
 
-        if server not in self._file_link_getters:
-            log.error(
-                "Server not supported for file download | server={server}",
+        if server not in SUPPORTED_SERVERS:
+            logger.error(
+                "Server not supported | server={server} supported={supported}",
                 server=server,
+                supported=SUPPORTED_SERVERS,
             )
             return None
 
@@ -302,8 +296,8 @@ class AnimeFLVScraper(BaseScraper):
 
     async def _get_sw_link(self, page):
         """Get SW server link."""
-        log = logger
-        log.debug("Getting SW link")
+
+        logger.debug("Getting SW link")
 
         video_element = await page.wait_for_selector(
             "div#video_box", timeout=SW_TIMEOUT
@@ -315,8 +309,8 @@ class AnimeFLVScraper(BaseScraper):
 
     async def _get_yourupload_link(self, page):
         """Get YourUpload server link."""
-        log = logger
-        log.debug("Getting YourUpload link")
+
+        logger.debug("Getting YourUpload link")
 
         video_element = await page.wait_for_selector(
             "div#video_box", timeout=YOURUPLOAD_TIMEOUT
@@ -328,8 +322,8 @@ class AnimeFLVScraper(BaseScraper):
 
     async def _get_sw_file_link(self, page, url: str):
         """Get SW file download link."""
-        log = logger
-        log.debug("Getting SW file link")
+
+        logger.debug("Getting SW file link")
 
         try:
             await page.goto(url)
@@ -376,8 +370,8 @@ class AnimeFLVScraper(BaseScraper):
 
     async def _get_yourupload_file_link(self, page, url: str):
         """Get YourUpload file download link."""
-        log = logger
-        log.debug("Getting YourUpload file link")
+
+        logger.debug("Getting YourUpload file link")
 
         try:
             await page.goto(url)
