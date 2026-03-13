@@ -152,7 +152,7 @@ git commit -m "feat(auth): add JWT authentication" -m "Adds JWT middleware and t
 Git CLI:
 
 ```bash
-git add .
+git add <file> <file> ...
 git commit -m "feat(auth): add JWT authentication"
 git push
 ```
