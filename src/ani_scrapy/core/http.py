@@ -3,7 +3,7 @@
 import aiohttp
 import time
 from typing import Dict, Optional
-from loguru import logger
+from ani_scrapy.core.log import logger
 
 from ani_scrapy.core.constants.general import CONTEXT_OPTIONS
 
@@ -39,9 +39,7 @@ class AsyncHttpAdapter(BaseHttpAdapter):
                     "accept-language"
                 ],
             }
-            self._session = aiohttp.ClientSession(
-                timeout=timeout, headers=headers
-            )
+            self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
         return self._session
 
     async def get(self, endpoint: str, params: Optional[Dict] = None) -> str:
@@ -79,9 +77,7 @@ class AsyncHttpAdapter(BaseHttpAdapter):
         session = await self._get_session()
         url = self.build_url(endpoint)
 
-        logger.debug(
-            "HTTP POST request | url={url} data={data}", url=url, data=data
-        )
+        logger.debug("HTTP POST request | url={url} data={data}", url=url, data=data)
 
         start = time.perf_counter()
         try:
