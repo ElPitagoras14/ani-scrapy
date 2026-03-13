@@ -12,7 +12,7 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 
-from ani_scrapy import AnimeFLVScraper, JKAnimeScraper
+from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper
 
 console = Console()
 
@@ -70,6 +70,30 @@ async def main():
         console.print(
             f"\n[green]Found {len(results_jk.animes)} results on "
             + f"JKAnime[/green] ({elapsed_jk:.2f}s)"
+        )
+
+    async with AnimeAV1Scraper() as scraper_av1:
+        rprint("\n[bold yellow]AnimeAV1:[/bold yellow]")
+        start_av1 = time.perf_counter()
+        results_av1 = await scraper_av1.search_anime(query=query)
+        elapsed_av1 = time.perf_counter() - start_av1
+
+        table3 = Table(title="AnimeAV1 Results")
+        table3.add_column("ID", style="cyan")
+        table3.add_column("Title", style="magenta")
+        table3.add_column("Type", style="green")
+
+        for anime in results_av1.animes[:10]:
+            table3.add_row(
+                anime.id,
+                anime.title,
+                anime.type.value or "-",
+            )
+
+        console.print(table3)
+        console.print(
+            f"\n[green]Found {len(results_av1.animes)} results on "
+            + f"AnimeAV1[/green] ({elapsed_av1:.2f}s)"
         )
 
     rprint("\n[bold cyan]=== Example Complete ===[/bold cyan]")

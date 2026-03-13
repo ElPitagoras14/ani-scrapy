@@ -13,11 +13,9 @@ from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn
 from rich.table import Table
 from rich import print as rprint
 
-from ani_scrapy.jkanime import JKAnimeScraper
+from ani_scrapy import JKAnimeScraper
 
-BRAVE_PATH = (
-    r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-)
+BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
 console = Console()
 
@@ -88,9 +86,7 @@ async def main():
 
         for anime_id, title, episodes, elapsed in results:
             if episodes == -1:
-                table.add_row(
-                    anime_id, "[red]Error[/red]", "-", f"{elapsed:.2f}s"
-                )
+                table.add_row(anime_id, "[red]Error[/red]", "-", f"{elapsed:.2f}s")
             else:
                 table.add_row(
                     anime_id, title or "N/A", str(episodes), f"{elapsed:.2f}s"

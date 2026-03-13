@@ -14,11 +14,9 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 
-from ani_scrapy.jkanime import JKAnimeScraper
+from ani_scrapy import JKAnimeScraper
 
-BRAVE_PATH = (
-    r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-)
+BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
 console = Console()
 
@@ -40,8 +38,7 @@ async def main():
         )
 
         rprint(
-            "[bold yellow]=== Step 1: Get Table Download Links ==="
-            + "[/bold yellow]"
+            "[bold yellow]=== Step 1: Get Table Download Links ===" + "[/bold yellow]"
         )
         start = time.perf_counter()
         table_links = await scraper.get_table_download_links(
@@ -89,26 +86,19 @@ async def main():
             start_link = time.perf_counter()
 
             try:
-                final_url = await scraper.get_file_download_link(
-                    download_info=link
-                )
+                final_url = await scraper.get_file_download_link(download_info=link)
                 elapsed_link = time.perf_counter() - start_link
 
                 if final_url:
                     url_display = (
-                        final_url[:60] + "..."
-                        if len(final_url) > 60
-                        else final_url
+                        final_url[:60] + "..." if len(final_url) > 60 else final_url
                     )
                     results_table.add_row(link.server, url_display)
                     rprint(f"  [green]✓ Got URL[/green] ({elapsed_link:.2f}s)")
                 else:
-                    results_table.add_row(
-                        link.server, "[red]Failed to resolve[/red]"
-                    )
+                    results_table.add_row(link.server, "[red]Failed to resolve[/red]")
                     rprint(
-                        "  [red]✗ Failed to resolve[/red] "
-                        + f"({elapsed_link:.2f}s)"
+                        "  [red]✗ Failed to resolve[/red] " + f"({elapsed_link:.2f}s)"
                     )
             except Exception as e:
                 rprint(f"  [red]✗ Error: {e}[/red]")

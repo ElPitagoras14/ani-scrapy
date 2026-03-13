@@ -14,8 +14,7 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 
-from ani_scrapy import AnimeFLVScraper
-from ani_scrapy.jkanime import JKAnimeScraper
+from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper
 
 BRAVE_PATH = (
     r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
@@ -182,6 +181,126 @@ async def main():
 
         elapsed_jk = time.perf_counter() - start_jk
         rprint(f"\n[dim]JKAnime total time: {elapsed_jk:.2f}s[/dim]")
+
+    async with AnimeAV1Scraper(executable_path=BRAVE_PATH) as scraper_av1:
+        anime_id = "sousou-no-frieren-2nd-season"
+        episode_number = 7
+
+        rprint(
+            f"\n[bold]Getting download links for AnimeAV1:[/bold] {anime_id} - "
+            + f"Episode {episode_number}\n"
+        )
+
+        rprint(
+            "[bold yellow]=== AnimeAV1 Table Download Links ===[/bold yellow]"
+        )
+        start_av1 = time.perf_counter()
+        table_links = await scraper_av1.get_table_download_links(
+            anime_id=anime_id, episode_number=episode_number
+        )
+
+        if table_links.download_links:
+            table_av1 = Table(title="AnimeAV1 Direct Download Links")
+            table_av1.add_column("Server", style="cyan")
+            table_av1.add_column("URL", style="magenta")
+
+            for link in table_links.download_links:
+                url_display = (
+                    link.url[:60] + "..."
+                    if link.url and len(link.url) > 60
+                    else link.url or "N/A"
+                )
+                table_av1.add_row(link.server, url_display)
+
+            console.print(table_av1)
+
+            valid_download = next(
+                (
+                    link
+                    for link in table_links.download_links
+                    if link.server == "PDrain"
+                ),
+                None,
+            )
+
+            if valid_download:
+                rprint(
+                    "\n[bold green]Getting file download link from "
+                    + f"{valid_download.server}...[/bold green]"
+                )
+
+                file_link = await scraper_av1.get_file_download_link(
+                    download_info=valid_download
+                )
+
+                if file_link:
+                    rprint("[cyan]File download URL:[/cyan]")
+                    print(file_link)
+                else:
+                    rprint("[yellow]Could not get file download link[/yellow]")
+            else:
+                rprint(
+                    "[yellow]No supported servers found for file download"
+                    + "[/yellow]"
+                )
+        else:
+            rprint(
+                "[yellow]No table download links found for AnimeAV1[/yellow]"
+            )
+
+        rprint(
+            "\n[bold yellow]=== AnimeAV1 Iframe Download Links ===[/bold yellow]"
+        )
+        iframe_links = await scraper_av1.get_iframe_download_links(
+            anime_id=anime_id, episode_number=episode_number
+        )
+
+        if iframe_links.download_links:
+            table_iframe = Table(title="AnimeAV1 Iframe Download Links")
+            table_iframe.add_column("Server", style="cyan")
+            table_iframe.add_column("URL", style="magenta")
+
+            for link in iframe_links.download_links:
+                url_display = (
+                    link.url[:60] + "..."
+                    if link.url and len(link.url) > 60
+                    else link.url or "N/A"
+                )
+                table_iframe.add_row(link.server, url_display)
+
+            console.print(table_iframe)
+
+            valid_iframe = next(
+                (
+                    link
+                    for link in iframe_links.download_links
+                    if link.server in ("UPNShare")
+                ),
+                None,
+            )
+
+            if valid_iframe:
+                rprint(
+                    f"\n[bold green]Getting file download link from "
+                    f"{valid_iframe.server}...[/bold green]"
+                )
+
+                file_link = await scraper_av1.get_file_download_link(
+                    download_info=valid_iframe
+                )
+
+                if file_link:
+                    rprint("[cyan]File download URL:[/cyan]")
+                    print(file_link)
+                else:
+                    rprint("[yellow]Could not get file download link[/yellow]")
+        else:
+            rprint(
+                "[yellow]No iframe download links found for AnimeAV1[/yellow]"
+            )
+
+        elapsed_av1 = time.perf_counter() - start_av1
+        rprint(f"\n[dim]AnimeAV1 total time: {elapsed_av1:.2f}s[/dim]")
 
     rprint("\n[bold cyan]=== Example Complete ===[/bold cyan]")
 
