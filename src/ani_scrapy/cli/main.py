@@ -5,7 +5,6 @@ import typer
 
 from ani_scrapy.cli.doctor import AniScrapyDoctor
 
-
 app = typer.Typer(
     help="ani-scrapy - Anime scraping CLI",
     add_completion=False,
