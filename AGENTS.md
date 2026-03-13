@@ -2,16 +2,18 @@
 
 ## Code Style Guidelines
 
-### Package Management
+### General
 
 - Use `uv` for package management
+- Use `.venv` to run scripts and tests
 
 ### Imports
 
 - Group imports in this order: standard library, third-party, local application
-- Use absolute imports for package modules
 - Sort imports alphabetically within each group
 - Don't use conditional imports
+- Use absolute imports for package modules
+- Use relative imports for same directory imports
 
 ### Types
 
@@ -64,10 +66,7 @@
 - Design for incremental evolution, not hypothetical scalability
 - Prefer explicit, easy-to-understand solutions over clever or implicit ones
 - Keep parsing logic in parsers, network coordination in scrapers
-- Do not introduce new dependencies without clear justification
 - Prefer solutions that fit a small team or solo-maintained project
-
----
 
 ## Planning and Design Behavior
 
@@ -78,8 +77,6 @@
 - Do not impose design patterns; suggest them only when they add real value
 
 ## Git Conventions
-
-Ignore `tasks` folder in commits
 
 ### Branch Naming Convention
 
@@ -110,7 +107,7 @@ git push -u origin feat/add-user-authentication
 
 ---
 
-### Commit Message Convention
+### Commit Convention
 
 Header format: `<type>(scope): <short description>`
 
@@ -121,6 +118,8 @@ Rules:
 - max ~72 chars
 - scope optional
 - use body description for longer descriptions
+- make small but complete commits
+- commit `pyproject.toml` in the last commit when it changes
 
 Minimal types:
 

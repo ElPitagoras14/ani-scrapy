@@ -3,9 +3,9 @@
 Example 02: Get Anime Information
 
 Demonstrates how to get detailed anime information including:
-- Title, synopsis, genres
+- Title, description, genres
 - Episode list with thumbnails
-- Rating and status information
+- Status information
 """
 
 import asyncio
@@ -20,9 +20,7 @@ from ani_scrapy import AnimeFLVScraper
 from ani_scrapy.jkanime import JKAnimeScraper
 from ani_scrapy.core.schemas import AnimeInfo
 
-BRAVE_PATH = (
-    r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-)
+BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
 console = Console()
 
@@ -43,21 +41,15 @@ def format_info(anime: AnimeInfo):
     text.append(anime.type.value or "N/A", style="white")
     text.append("\n\n")
 
-    text.append("Rating: ", style="bold cyan")
-    text.append(str(anime.rating) or "N/A", style="white")
-    text.append("\n\n")
-
     text.append("Genres: ", style="bold cyan")
-    text.append(
-        ", ".join(anime.genres) if anime.genres else "N/A", style="white"
-    )
+    text.append(", ".join(anime.genres) if anime.genres else "N/A", style="white")
     text.append("\n\n")
 
-    text.append("Synopsis:\n", style="bold yellow")
+    text.append("Description:\n", style="bold yellow")
     text.append(
-        anime.synopsis[:500] + "..."
-        if anime.synopsis and len(anime.synopsis) > 500
-        else anime.synopsis or "N/A"
+        anime.description[:500] + "..."
+        if anime.description and len(anime.description) > 500
+        else anime.description or "N/A"
     )
 
     return Panel(text, title="Anime Information", expand=False)
@@ -67,9 +59,7 @@ async def main():
     """Run the anime info example."""
     rprint("[bold cyan]=== Example 02: Get Anime Information[/bold cyan]\n")
 
-    async with AnimeFLVScraper(
-        headless=True, executable_path=BRAVE_PATH
-    ) as scraper:
+    async with AnimeFLVScraper(headless=True, executable_path=BRAVE_PATH) as scraper:
         anime_id = "gachiakuta"
 
         rprint(f"[bold]Fetching info for:[/bold] '{anime_id}'\n")
@@ -110,8 +100,7 @@ async def main():
         anime_id = "gachiakuta"
 
         rprint(
-            f"[bold]Fetching info for:[/bold] '{anime_id}' "
-            + "(using Brave browser)"
+            f"[bold]Fetching info for:[/bold] '{anime_id}' " + "(using Brave browser)"
         )
         rprint(f"[dim]Browser: {BRAVE_PATH}[/dim]\n")
 

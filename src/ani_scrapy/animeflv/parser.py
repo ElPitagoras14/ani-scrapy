@@ -12,7 +12,11 @@ from ani_scrapy.core.schemas import (
     _AnimeType,
     _RelatedType,
 )
-from ani_scrapy.animeflv.constants import BASE_EPISODE_IMG_URL, ANIME_TYPE_MAP, RELATED_TYPE_MAP
+from ani_scrapy.animeflv.constants import (
+    BASE_EPISODE_IMG_URL,
+    ANIME_TYPE_MAP,
+    RELATED_TYPE_MAP,
+)
 
 
 class AnimeFLVParser:
@@ -38,9 +42,7 @@ class AnimeFLVParser:
 
                 title_element = article.select_one("h3")
                 title = (
-                    str(title_element.text.strip())
-                    if title_element
-                    else ""
+                    str(title_element.text.strip()) if title_element else ""
                 )
 
                 img_element = article.select_one("figure img")
@@ -91,7 +93,7 @@ class AnimeFLVParser:
         )
 
         synopsis_element = soup.select_one("div.Description")
-        synopsis = synopsis_element.text.strip() if synopsis_element else ""
+        description = synopsis_element.text.strip() if synopsis_element else ""
 
         type_element = soup.select_one("span.Type")
         type_text = type_element.text.strip() if type_element else "Anime"
@@ -103,17 +105,6 @@ class AnimeFLVParser:
             genre_text = genre_element.text.strip()
             if genre_text:
                 genres.append(genre_text)
-
-        other_titles = []
-        titles_element = soup.select_one("div.Titles")
-        if titles_element:
-            for title_element in titles_element.select("span"):
-                title_text = title_element.text.strip()
-                if title_text:
-                    other_titles.append(title_text)
-
-        rating_element = soup.select_one("span.Rating")
-        rating = rating_element.text.strip() if rating_element else None
 
         related_info = []
         related_elements = soup.select("ul.Related li")
@@ -171,9 +162,7 @@ class AnimeFLVParser:
             title=title,
             type=anime_type,
             poster=poster,
-            synopsis=synopsis,
-            rating=rating,
-            other_titles=other_titles,
+            description=description,
             genres=genres,
             related_info=related_info,
             episodes=list(episodes),
@@ -195,9 +184,9 @@ class AnimeFLVParser:
 
             if "var anime_info = [" in contents:
                 try:
-                    anime_info = contents.split("var anime_info = ")[1].split(";")[
-                        0
-                    ]
+                    anime_info = contents.split("var anime_info = ")[1].split(
+                        ";"
+                    )[0]
                     info_ids = json.loads(anime_info)
                 except (IndexError, json.JSONDecodeError):
                     continue
@@ -301,7 +290,11 @@ class AnimeFLVParser:
                 rows.append(
                     {
                         "server": cells[0].text,
-                        "url": str(cells[3].select_one("a").get("href")) if cells[3].select_one("a") else None,
+                        "url": (
+                            str(cells[3].select_one("a").get("href"))
+                            if cells[3].select_one("a")
+                            else None
+                        ),
                     }
                 )
 
