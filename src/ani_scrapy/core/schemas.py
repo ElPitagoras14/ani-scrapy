@@ -56,7 +56,7 @@ class AnimeInfo(BaseAnimeInfo):
     description: str
     is_finished: bool
     genres: list[str] = field(default_factory=list)
-    related_info: list[RelatedInfo] = field(default_factory=list)
+    related_info: list[RelatedInfo | None] = field(default_factory=list)
     next_episode_date: datetime | None = None
     episodes: list[EpisodeInfo | None] = field(default_factory=list)
 
