@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
 from datetime import datetime
 
 
@@ -35,7 +34,7 @@ class SearchAnimeInfo(BaseAnimeInfo):
 class PagedSearchAnimeInfo:
     page: int
     total_pages: int
-    animes: List[SearchAnimeInfo]
+    animes: list[SearchAnimeInfo]
 
 
 @dataclass
@@ -49,28 +48,26 @@ class RelatedInfo:
 class EpisodeInfo:
     number: int
     anime_id: str
-    image_preview: Optional[str] = None
+    image_preview: str | None = None
 
 
 @dataclass
 class AnimeInfo(BaseAnimeInfo):
-    synopsis: str
+    description: str
     is_finished: bool
-    rating: Optional[str] = None
-    other_titles: List[str] = field(default_factory=list)
-    genres: List[str] = field(default_factory=list)
-    related_info: List[RelatedInfo] = field(default_factory=list)
-    next_episode_date: Optional[datetime] = None
-    episodes: List[Optional[EpisodeInfo]] = field(default_factory=list)
+    genres: list[str] = field(default_factory=list)
+    related_info: list[RelatedInfo] = field(default_factory=list)
+    next_episode_date: datetime | None = None
+    episodes: list[EpisodeInfo | None] = field(default_factory=list)
 
 
 @dataclass
 class DownloadLinkInfo:
     server: str
-    url: Optional[str] = None
+    url: str | None = None
 
 
 @dataclass
 class EpisodeDownloadInfo:
     episode_number: int
-    download_links: List[DownloadLinkInfo]
+    download_links: list[DownloadLinkInfo]

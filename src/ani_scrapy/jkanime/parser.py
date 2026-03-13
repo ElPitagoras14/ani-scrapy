@@ -130,14 +130,14 @@ class JKAnimeParser:
 
         main_anime_info = soup.select_one("div.anime_info")
         title = ""
-        synopsis = ""
+        description = ""
 
         if main_anime_info:
             title_element = main_anime_info.find("h3")
             title = title_element.text.strip() if title_element else ""
 
             synopsis_element = main_anime_info.select_one("p.scroll")
-            synopsis = (
+            description = (
                 synopsis_element.text.strip() if synopsis_element else ""
             )
 
@@ -162,9 +162,7 @@ class JKAnimeParser:
             title=title,
             type=anime_type,
             poster=poster,
-            synopsis=synopsis,
-            rating=None,
-            other_titles=[],
+            description=description,
             genres=genres,
             related_info=[],
             episodes=list(episodes),
@@ -196,7 +194,9 @@ class JKAnimeParser:
 
                 img_element = episode.select_one("a > div")
                 image_preview = (
-                    str(img_element.get("data-setbg", "")) if img_element else None
+                    str(img_element.get("data-setbg", ""))
+                    if img_element
+                    else None
                 )
 
                 episodes.append(

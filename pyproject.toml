@@ -1,9 +1,9 @@
 [project]
 name = "ani-scrapy"
-version = "0.3.6"
-description = "Async-first Python library for scraping anime websites. Supports AnimeFLV and JKAnime with unified interface, detailed metadata, and download links from multiple servers."
+version = "0.4.0"
+description = "Async-first Python library for scraping anime websites. Supports some anime websites with unified interface, detailed metadata, and download links from multiple servers."
 readme = "README.md"
-requires-python = ">=3.10.14"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "github:ElPitagoras14", email = "jonfrgar@espol.edu.ec" }]
 keywords = ["anime", "scraping", "playwright", "async", "python"]
