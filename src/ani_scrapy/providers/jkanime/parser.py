@@ -10,7 +10,7 @@ from ani_scrapy.core.schemas import (
     EpisodeInfo,
     _AnimeType,
 )
-from ani_scrapy.jkanime.constants import ANIME_TYPE_MAP
+from ani_scrapy.providers.jkanime.constants import ANIME_TYPE_MAP
 from ani_scrapy.core.constants.general import MONTH_MAP
 
 
@@ -48,9 +48,7 @@ class JKAnimeParser:
                 )
 
                 type_element = element.select_one("li.anime")
-                type_text = (
-                    type_element.text.strip() if type_element else "Anime"
-                )
+                type_text = type_element.text.strip() if type_element else "Anime"
                 anime_type = JKAnimeParser._map_anime_type(type_text)
 
                 if anime_id and title:
@@ -78,11 +76,7 @@ class JKAnimeParser:
             raise ValueError("Could not find anime info container")
 
         poster_element = side_anime_info.find("img")
-        poster = (
-            str(poster_element.get("src", "")).strip()
-            if poster_element
-            else ""
-        )
+        poster = str(poster_element.get("src", "")).strip() if poster_element else ""
 
         info_container = side_anime_info.select_one("div.card-bod")
         list_info = info_container.find_all("li") if info_container else []
@@ -95,9 +89,7 @@ class JKAnimeParser:
         genres = []
         if len(list_info) > 1:
             genre_elements = list_info[1].find_all("a")
-            genres = [
-                genre.text.strip() for genre in genre_elements if genre.text
-            ]
+            genres = [genre.text.strip() for genre in genre_elements if genre.text]
 
         is_finished = False
         parsed_date = None
@@ -122,9 +114,7 @@ class JKAnimeParser:
                     year = parts[-1]
                     month = MONTH_MAP.get(parts[-3], "01")
                     day = parts[-5]
-                    parsed_date = datetime.strptime(
-                        f"{year}-{month}-{day}", "%Y-%m-%d"
-                    )
+                    parsed_date = datetime.strptime(f"{year}-{month}-{day}", "%Y-%m-%d")
                 except (ValueError, IndexError):
                     pass
 
@@ -137,9 +127,7 @@ class JKAnimeParser:
             title = title_element.text.strip() if title_element else ""
 
             synopsis_element = main_anime_info.select_one("p.scroll")
-            description = (
-                synopsis_element.text.strip() if synopsis_element else ""
-            )
+            description = synopsis_element.text.strip() if synopsis_element else ""
 
         raw_next_episode_date = soup.select("div#proxep")
         if raw_next_episode_date and len(raw_next_episode_date) == 2:
@@ -194,9 +182,7 @@ class JKAnimeParser:
 
                 img_element = episode.select_one("a > div")
                 image_preview = (
-                    str(img_element.get("data-setbg", ""))
-                    if img_element
-                    else None
+                    str(img_element.get("data-setbg", "")) if img_element else None
                 )
 
                 episodes.append(
@@ -217,9 +203,7 @@ class JKAnimeParser:
         return ANIME_TYPE_MAP.get(site_type, _AnimeType.TV)
 
     @staticmethod
-    def parse_table_download_links(
-        html: str, episode_number: int
-    ) -> List[dict]:
+    def parse_table_download_links(html: str, episode_number: int) -> List[dict]:
         """Parse table download links."""
         soup = BeautifulSoup(html, "lxml")
         download_container = soup.select_one("div.download.mt-2")
@@ -243,9 +227,7 @@ class JKAnimeParser:
                     )
 
                     if server and url:
-                        all_download_links.append(
-                            {"server": server, "url": url}
-                        )
+                        all_download_links.append({"server": server, "url": url})
             except Exception:
                 continue
 

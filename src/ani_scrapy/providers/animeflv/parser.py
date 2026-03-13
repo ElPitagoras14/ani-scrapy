@@ -12,7 +12,7 @@ from ani_scrapy.core.schemas import (
     _AnimeType,
     _RelatedType,
 )
-from ani_scrapy.animeflv.constants import (
+from ani_scrapy.providers.animeflv.constants import (
     BASE_EPISODE_IMG_URL,
     ANIME_TYPE_MAP,
     RELATED_TYPE_MAP,
@@ -41,21 +41,13 @@ class AnimeFLVParser:
                 anime_id = href.split("/")[-1] if href else ""
 
                 title_element = article.select_one("h3")
-                title = (
-                    str(title_element.text.strip()) if title_element else ""
-                )
+                title = str(title_element.text.strip()) if title_element else ""
 
                 img_element = article.select_one("figure img")
-                poster = (
-                    str(img_element.get("src", "")).strip()
-                    if img_element
-                    else ""
-                )
+                poster = str(img_element.get("src", "")).strip() if img_element else ""
 
                 type_element = article.select_one("span.Type")
-                type_text = (
-                    type_element.text.strip() if type_element else "Anime"
-                )
+                type_text = type_element.text.strip() if type_element else "Anime"
                 anime_type = AnimeFLVParser._map_anime_type(type_text)
 
                 if anime_id and title:
@@ -86,11 +78,7 @@ class AnimeFLVParser:
         title = title_element.text.strip() if title_element else ""
 
         poster_element = soup.select_one("figure img")
-        poster = (
-            str(poster_element.get("src", "")).strip()
-            if poster_element
-            else ""
-        )
+        poster = str(poster_element.get("src", "")).strip() if poster_element else ""
 
         synopsis_element = soup.select_one("div.Description")
         description = synopsis_element.text.strip() if synopsis_element else ""
@@ -115,14 +103,10 @@ class AnimeFLVParser:
                 related_title = related_link.text.strip()
                 related_type_element = related_element.select_one("span.Type")
                 related_type_text = (
-                    related_type_element.text.strip()
-                    if related_type_element
-                    else ""
+                    related_type_element.text.strip() if related_type_element else ""
                 )
 
-                related_type = AnimeFLVParser._map_related_type(
-                    related_type_text
-                )
+                related_type = AnimeFLVParser._map_related_type(related_type_text)
 
                 if related_id and related_title:
                     related_info.append(
@@ -135,9 +119,7 @@ class AnimeFLVParser:
 
         episodes: list[EpisodeInfo | None] = []
         if include_episodes:
-            episodes = AnimeFLVParser._extract_episodes_from_json(
-                soup, anime_id
-            )
+            episodes = AnimeFLVParser._extract_episodes_from_json(soup, anime_id)
 
         next_episode_date = None
         date_element = soup.select_one("span.Date")
@@ -184,9 +166,7 @@ class AnimeFLVParser:
 
             if "var anime_info = [" in contents:
                 try:
-                    anime_info = contents.split("var anime_info = ")[1].split(
-                        ";"
-                    )[0]
+                    anime_info = contents.split("var anime_info = ")[1].split(";")[0]
                     info_ids = json.loads(anime_info)
                 except (IndexError, json.JSONDecodeError):
                     continue
@@ -205,9 +185,7 @@ class AnimeFLVParser:
         soup: BeautifulSoup, anime_id: str
     ) -> list[EpisodeInfo]:
         """Extract episode information from JSON in script tags."""
-        info_ids, episodes_data = AnimeFLVParser.extract_episode_data(
-            str(soup)
-        )
+        info_ids, episodes_data = AnimeFLVParser.extract_episode_data(str(soup))
 
         if not info_ids or not episodes_data:
             return []
@@ -217,9 +195,7 @@ class AnimeFLVParser:
 
         for episode_number, _ in reversed(episodes_data):
             number = int(episode_number)
-            image_preview = (
-                f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{number}/th_3.jpg"
-            )
+            image_preview = f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{number}/th_3.jpg"
             episodes.append(
                 EpisodeInfo(
                     number=number,
@@ -231,9 +207,7 @@ class AnimeFLVParser:
         return episodes
 
     @staticmethod
-    def _extract_episodes(
-        soup: BeautifulSoup, anime_id: str
-    ) -> List[EpisodeInfo]:
+    def _extract_episodes(soup: BeautifulSoup, anime_id: str) -> List[EpisodeInfo]:
         """Extract episode information."""
         episodes = []
         episode_elements = soup.select("ul.Episodes li")
@@ -249,15 +223,11 @@ class AnimeFLVParser:
 
                 img_element = episode_element.select_one("img")
                 preview = (
-                    str(img_element.get("src", "")).strip()
-                    if img_element
-                    else None
+                    str(img_element.get("src", "")).strip() if img_element else None
                 )
 
                 episodes.append(
-                    EpisodeInfo(
-                        number=number, anime_id=anime_id, image_preview=preview
-                    )
+                    EpisodeInfo(number=number, anime_id=anime_id, image_preview=preview)
                 )
 
             except Exception:
@@ -276,9 +246,7 @@ class AnimeFLVParser:
         return RELATED_TYPE_MAP.get(site_type, _RelatedType.PREQUEL)
 
     @staticmethod
-    def parse_table_download_links(
-        html: str, episode_number: int
-    ) -> list[dict]:
+    def parse_table_download_links(html: str, episode_number: int) -> list[dict]:
         """Parse table download links from episode page HTML."""
         soup = BeautifulSoup(html, "lxml")
         rows_list = soup.select("table.RTbl.Dwnl tbody tr")

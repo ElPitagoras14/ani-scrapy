@@ -20,3 +20,5 @@ RELATED_TYPE_MAP = {
     "Historia Paralela": _RelatedType.PARALLEL_HISTORY,
     "Historia Principal": _RelatedType.MAIN_HISTORY,
 }
+
+SUPPORTED_SERVERS = ["SW", "YourUpload"]

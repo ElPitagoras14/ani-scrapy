@@ -6,16 +6,17 @@ from typing import Optional
 from urllib.parse import quote
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
-from loguru import logger
+from ani_scrapy.core.log import logger
 
 from ani_scrapy.core.base import BaseScraper
 from ani_scrapy.core.browser import AsyncBrowser
 from ani_scrapy.core.http import AsyncHttpAdapter
-from ani_scrapy.jkanime.parser import JKAnimeParser
-from ani_scrapy.jkanime.constants import (
+from ani_scrapy.providers.jkanime.parser import JKAnimeParser
+from ani_scrapy.providers.jkanime.constants import (
     BASE_URL,
     SEARCH_ENDPOINT,
     SW_DOWNLOAD_URL,
+    SUPPORTED_SERVERS,
 )
 from ani_scrapy.core.constants.general import (
     SW_TIMEOUT,
@@ -63,14 +64,13 @@ class JKAnimeScraper(BaseScraper):
     ) -> None:
         """Safely click an element handling popups."""
         ctx = page.context
-        log = logger
 
         popup_task = asyncio.create_task(ctx.wait_for_event("page"))
 
         start = time.perf_counter()
         await element.click(force=True)
         elapsed = time.perf_counter() - start
-        log.debug(
+        logger.debug(
             "[{name}] Clicked | {ms}ms",
             name=debug_name,
             ms=round(elapsed * 1000, 2),
@@ -88,16 +88,14 @@ class JKAnimeScraper(BaseScraper):
             if reclick:
                 await element.click(force=True)
 
-    async def search_anime(
-        self, query: str, page: int = 1
-    ) -> PagedSearchAnimeInfo:
+    async def search_anime(self, query: str, page: int = 1) -> PagedSearchAnimeInfo:
         """Search anime."""
-        log = logger
-        log.info("Searching anime | query={query}", query=query)
+
+        logger.info("Searching anime | query={query}", query=query)
 
         safe_query = quote(query)
         search_anime_url = f"{SEARCH_ENDPOINT}/{safe_query}"
-        log.debug("Using search URL | url={url}", url=search_anime_url)
+        logger.debug("Using search URL | url={url}", url=search_anime_url)
 
         try:
             html_text = await self.http.get(search_anime_url)
@@ -106,7 +104,7 @@ class JKAnimeScraper(BaseScraper):
 
         animes = self.parser.parse_search_results(html_text)
 
-        log.info("Search completed | count={count}", count=len(animes))
+        logger.info("Search completed | count={count}", count=len(animes))
 
         return PagedSearchAnimeInfo(
             page=1,
@@ -120,16 +118,14 @@ class JKAnimeScraper(BaseScraper):
         include_episodes: bool = True,
     ) -> AnimeInfo:
         """Get anime info."""
-        log = logger
-        log.info("Getting anime info | anime_id={anime_id}", anime_id=anime_id)
+
+        logger.info("Getting anime info | anime_id={anime_id}", anime_id=anime_id)
 
         if include_episodes:
             url = f"{BASE_URL}/{anime_id}"
             browser = await self._get_browser()
             async with await browser.new_page() as page:
-                return await self._get_anime_info_with_episodes(
-                    page, url, anime_id
-                )
+                return await self._get_anime_info_with_episodes(page, url, anime_id)
 
         try:
             html_text = await self.http.get(anime_id)
@@ -142,8 +138,8 @@ class JKAnimeScraper(BaseScraper):
         self, page, url: str, anime_id: str
     ) -> AnimeInfo:
         """Get anime info with episodes using Playwright."""
-        log = logger
-        log.debug("Fetching anime info page with Playwright")
+
+        logger.debug("Fetching anime info page with Playwright")
 
         await page.goto(url, wait_until="domcontentloaded")
         await page.wait_for_selector("div.col-lg-2.picd")
@@ -154,23 +150,18 @@ class JKAnimeScraper(BaseScraper):
         episodes = await self._extract_all_episodes(page, anime_id)
         anime_info.episodes = list(episodes)
 
-        log.info("Anime info fetched | episodes={count}", count=len(episodes))
+        logger.info("Anime info fetched | episodes={count}", count=len(episodes))
         return anime_info
 
-    async def _extract_all_episodes(
-        self, page, anime_id: str
-    ) -> list[EpisodeInfo]:
+    async def _extract_all_episodes(self, page, anime_id: str) -> list[EpisodeInfo]:
         """Extract all episodes by navigating pages."""
-        log = logger
 
-        await page.wait_for_selector(
-            "div.nice-select.anime__pagination ul > li"
-        )
+        await page.wait_for_selector("div.nice-select.anime__pagination ul > li")
         select = await page.query_selector("div.nice-select.anime__pagination")
 
         paged_episodes = await select.query_selector_all("ul.list > li")
 
-        log.info(
+        logger.info(
             "Starting episode extraction | total_pages={total}",
             total=len(paged_episodes),
         )
@@ -182,23 +173,19 @@ class JKAnimeScraper(BaseScraper):
 
         while idx < len(paged_episodes):
             if retries <= 0:
-                log.warning("Retries exceeded, breaking")
+                logger.warning("Retries exceeded, breaking")
                 break
 
             if is_retry:
                 await page.wait_for_selector(
                     "div.nice-select.anime__pagination ul > li"
                 )
-                select = await page.query_selector(
-                    "div.nice-select.anime__pagination"
-                )
-                paged_episodes = await select.query_selector_all(
-                    "ul.list > li"
-                )
+                select = await page.query_selector("div.nice-select.anime__pagination")
+                paged_episodes = await select.query_selector_all("ul.list > li")
                 is_retry = False
 
                 if idx >= len(paged_episodes):
-                    log.warning(
+                    logger.warning(
                         "Index out of bounds after retry | idx={idx} | pages={pages}",
                         idx=idx,
                         pages=len(paged_episodes),
@@ -207,7 +194,7 @@ class JKAnimeScraper(BaseScraper):
 
             paged_episode = paged_episodes[idx]
 
-            log.info(
+            logger.info(
                 "Processing page {idx} of {total}",
                 idx=idx + 1,
                 total=len(paged_episodes),
@@ -218,27 +205,27 @@ class JKAnimeScraper(BaseScraper):
                 page,
                 reclick=True,
                 timeout=3000,
-                debug_name=f"select_reclick_{idx+1}",
+                debug_name=f"select_reclick_{idx + 1}",
             )
 
             await self._safe_click(
                 paged_episode,
                 page,
                 timeout=2000,
-                debug_name=f"page_click_{idx+1}",
+                debug_name=f"page_click_{idx + 1}",
             )
 
             html_text = await page.content()
             new_episodes = self.parser.parse_episode_page(html_text, anime_id)
 
-            log.info(
+            logger.info(
                 "Extracted episodes from page | count={count} | last={last}",
                 count=len(new_episodes),
                 last=new_episodes[-1].number if new_episodes else None,
             )
 
             if not new_episodes:
-                log.warning("[ITER_{idx}] EMPTY - Continuing", idx=idx + 1)
+                logger.warning("[ITER_{idx}] EMPTY - Continuing", idx=idx + 1)
 
                 retries -= 1
                 is_retry = True
@@ -248,7 +235,7 @@ class JKAnimeScraper(BaseScraper):
                 last_extracted = all_episodes[-1].number
                 last_page_episode = new_episodes[-1].number
                 if last_page_episode == last_extracted:
-                    log.warning(
+                    logger.warning(
                         "[ITER_{idx}] SAME episodes detected - Continuing",
                         idx=idx + 1,
                     )
@@ -260,9 +247,7 @@ class JKAnimeScraper(BaseScraper):
             all_episodes.extend(new_episodes)
             idx += 1
 
-        log.info(
-            "All episodes extracted | count={count}", count=len(all_episodes)
-        )
+        logger.info("All episodes extracted | count={count}", count=len(all_episodes))
         return all_episodes
 
     async def get_new_episodes(
@@ -271,8 +256,8 @@ class JKAnimeScraper(BaseScraper):
         last_episode_number: int,
     ) -> list[EpisodeInfo]:
         """Get new episodes since last_episode_number."""
-        log = logger
-        log.info(
+
+        logger.info(
             "Getting new episodes | anime_id={anime_id} last_episode_number={last_episode_number}",
             anime_id=anime_id,
             last_episode_number=last_episode_number,
@@ -294,17 +279,14 @@ class JKAnimeScraper(BaseScraper):
         last_episode_number: int,
     ) -> list[EpisodeInfo]:
         """Internal method for getting new episodes."""
-        log = logger
 
         await page.goto(url)
-        await page.wait_for_selector(
-            "div.nice-select.anime__pagination ul > li"
-        )
+        await page.wait_for_selector("div.nice-select.anime__pagination ul > li")
 
         select = await page.query_selector("div.nice-select.anime__pagination")
         paged_episodes = await select.query_selector_all("ul.list > li")
 
-        log.debug(
+        logger.debug(
             "Found {count} episode pages",
             count=len(paged_episodes),
         )
@@ -315,7 +297,7 @@ class JKAnimeScraper(BaseScraper):
         finished = False
         is_retry = False
 
-        log.debug(
+        logger.debug(
             "Starting new episode extraction | start_page={page} | last_episode={last}",
             page=idx + 1,
             last=last_episode_number,
@@ -323,23 +305,19 @@ class JKAnimeScraper(BaseScraper):
 
         while idx >= 0:
             if retries <= 0:
-                log.warning("Retries exceeded, breaking")
+                logger.warning("Retries exceeded, breaking")
                 break
 
             if is_retry:
-                log.debug("Retrying, fetching fresh select elements")
+                logger.debug("Retrying, fetching fresh select elements")
                 await page.wait_for_selector(
                     "div.nice-select.anime__pagination ul > li"
                 )
-                select = await page.query_selector(
-                    "div.nice-select.anime__pagination"
-                )
-                paged_episodes = await select.query_selector_all(
-                    "ul.list > li"
-                )
+                select = await page.query_selector("div.nice-select.anime__pagination")
+                paged_episodes = await select.query_selector_all("ul.list > li")
                 is_retry = False
 
-            log.debug(
+            logger.debug(
                 "Processing page {idx} of {total}",
                 idx=idx + 1,
                 total=len(paged_episodes),
@@ -360,7 +338,7 @@ class JKAnimeScraper(BaseScraper):
 
             page_url = page.url
             if page_url != url:
-                log.warning(
+                logger.warning(
                     "Page URL changed, retrying | retries_left={retries}",
                     retries=retries,
                 )
@@ -374,14 +352,14 @@ class JKAnimeScraper(BaseScraper):
             html_text = await page.content()
             new_episodes = self.parser.parse_episode_page(html_text, anime_id)
 
-            log.debug(
+            logger.debug(
                 "Extracted episodes from page | count={count} | last_episode={last}",
                 count=len(new_episodes),
                 last=new_episodes[-1].number if new_episodes else None,
             )
 
             if not new_episodes:
-                log.warning(
+                logger.warning(
                     "Empty episodes page detected, retrying | retries_left={retries}",
                     retries=retries,
                 )
@@ -397,18 +375,15 @@ class JKAnimeScraper(BaseScraper):
                 all_episodes.append(episode)
                 new_episodes_found += 1
 
-            log.debug(
+            logger.debug(
                 "New episodes on page | count={count} | last_extracted={last}",
                 count=new_episodes_found,
                 last=all_episodes[-1].number if all_episodes else None,
             )
 
             if idx > 0 and all_episodes:
-                if (
-                    new_episodes
-                    and new_episodes[-1].number == all_episodes[-1].number
-                ):
-                    log.warning(
+                if new_episodes and new_episodes[-1].number == all_episodes[-1].number:
+                    logger.warning(
                         "Same paged_episode detected, retrying | retries_left={retries}",
                         retries=retries,
                     )
@@ -421,9 +396,7 @@ class JKAnimeScraper(BaseScraper):
             if finished:
                 break
 
-        log.info(
-            "New episodes fetched | count={count}", count=len(all_episodes)
-        )
+        logger.info("New episodes fetched | count={count}", count=len(all_episodes))
         return all_episodes
 
     async def get_table_download_links(
@@ -432,8 +405,8 @@ class JKAnimeScraper(BaseScraper):
         episode_number: int,
     ) -> EpisodeDownloadInfo:
         """Get table download links for an episode."""
-        log = logger
-        log.info(
+
+        logger.info(
             "Getting table download links | anime_id={anime_id} episode_number={episode_number}",
             anime_id=anime_id,
             episode_number=episode_number,
@@ -452,7 +425,6 @@ class JKAnimeScraper(BaseScraper):
         episode_number: int,
     ) -> EpisodeDownloadInfo:
         """Get table download links using page from Playwright."""
-        log = logger
 
         url = f"{BASE_URL}/{anime_id}/{episode_number}"
         await page.goto(url)
@@ -466,7 +438,7 @@ class JKAnimeScraper(BaseScraper):
             for link in download_links_data
         ]
 
-        log.info(
+        logger.info(
             "Table download links fetched | count={count}",
             count=len(all_download_links),
         )
@@ -481,19 +453,16 @@ class JKAnimeScraper(BaseScraper):
         episode_number: int,
     ) -> EpisodeDownloadInfo:
         """Get iframe download links for an episode."""
-        log = logger
-        log.warning("iframe download links not supported for JKAnime")
 
-        return EpisodeDownloadInfo(
-            episode_number=episode_number, download_links=[]
-        )
+        logger.warning("iframe download links not supported for JKAnime")
+
+        return EpisodeDownloadInfo(episode_number=episode_number, download_links=[])
 
     async def get_file_download_link(
         self,
         download_info: DownloadLinkInfo,
     ) -> str | None:
         """Get file download link for a download link info object."""
-        log = logger
 
         if not isinstance(download_info, DownloadLinkInfo):
             raise TypeError("download_info must be a DownloadLinkInfo object")
@@ -504,12 +473,13 @@ class JKAnimeScraper(BaseScraper):
         if url is None:
             return None
 
-        log.info("Getting file download link | server={server}", server=server)
+        logger.info("Getting file download link | server={server}", server=server)
 
-        if server not in self._file_link_getters:
-            log.error(
-                "Server not supported for file download | server={server}",
+        if server not in SUPPORTED_SERVERS:
+            logger.error(
+                "Server not supported | server={server} supported={supported}",
                 server=server,
+                supported=SUPPORTED_SERVERS,
             )
             return None
 
@@ -519,8 +489,8 @@ class JKAnimeScraper(BaseScraper):
 
     async def _get_streamwish_file_link(self, page, url: str) -> str | None:
         """Get Streamwish file download link."""
-        log = logger
-        log.debug("Getting Streamwish file link")
+
+        logger.debug("Getting Streamwish file link")
 
         await page.goto(url)
         current_url = page.url
@@ -564,8 +534,8 @@ class JKAnimeScraper(BaseScraper):
 
     async def _get_mediafire_file_link(self, page, url: str) -> str | None:
         """Get Mediafire file download link."""
-        log = logger
-        log.debug("Getting Mediafire file link")
+
+        logger.debug("Getting Mediafire file link")
 
         await page.goto(url)
 

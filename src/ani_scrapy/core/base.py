@@ -1,7 +1,14 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Optional
 
 from ani_scrapy.core.browser import AsyncBrowser
+from ani_scrapy.core.schemas import (
+    AnimeInfo,
+    DownloadLinkInfo,
+    EpisodeDownloadInfo,
+    EpisodeInfo,
+    PagedSearchAnimeInfo,
+)
 
 
 class BaseScraper(ABC):
@@ -69,3 +76,56 @@ class BaseScraper(ABC):
             await self._browser.__aexit__(None, None, None)
             self._browser = None
         self._external_browser = None
+
+    @abstractmethod
+    async def search_anime(
+        self,
+        query: str,
+        page: int = 1,
+    ) -> PagedSearchAnimeInfo:
+        """Search anime by query."""
+        ...
+
+    @abstractmethod
+    async def get_anime_info(
+        self,
+        anime_id: str,
+        include_episodes: bool = True,
+    ) -> AnimeInfo:
+        """Get detailed anime information."""
+        ...
+
+    @abstractmethod
+    async def get_new_episodes(
+        self,
+        anime_id: str,
+        last_episode_number: int,
+    ) -> list[EpisodeInfo]:
+        """Get episodes newer than last_episode_number."""
+        ...
+
+    @abstractmethod
+    async def get_table_download_links(
+        self,
+        anime_id: str,
+        episode_number: int,
+    ) -> EpisodeDownloadInfo:
+        """Get table download links for an episode."""
+        ...
+
+    @abstractmethod
+    async def get_iframe_download_links(
+        self,
+        anime_id: str,
+        episode_number: int,
+    ) -> EpisodeDownloadInfo:
+        """Get iframe download links for an episode."""
+        ...
+
+    @abstractmethod
+    async def get_file_download_link(
+        self,
+        download_info: DownloadLinkInfo,
+    ) -> str | None:
+        """Get direct file download link from download info."""
+        ...

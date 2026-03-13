@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ani_scrapy.jkanime.parser import JKAnimeParser
+from ani_scrapy.providers.jkanime.parser import JKAnimeParser
 from ani_scrapy.core.schemas import _AnimeType
 
 
