@@ -1,5 +1,16 @@
 """ani-scrapy doctor - Diagnostic tool for ani-scrapy."""
 
+import sys
+
+if sys.platform == "win32":
+    import codecs
+
+    try:
+        sys.stdout = codecs.getwriter("utf-8")(sys.stdout.buffer, "strict")
+        sys.stderr = codecs.getwriter("utf-8")(sys.stderr.buffer, "strict")
+    except Exception:
+        pass
+
 import asyncio
 import platform
 import subprocess
@@ -82,6 +93,7 @@ class AniScrapyDoctor:
     CONNECTIVITY_SITES = {
         "animeflv.net": "https://animeflv.net",
         "jkanime.net": "https://jkanime.net",
+        "animeav1.com": "https://animeav1.com",
     }
 
     def __init__(self, timeout: int = 5):
@@ -345,13 +357,13 @@ class AniScrapyDoctor:
         has_fail, has_warn = self._get_status_summary()
 
         if not has_fail and not has_warn:
-            icon = "✓"
+            icon = "✅"
         elif has_fail:
-            icon = "✗"
+            icon = "❌ "
         else:
-            icon = "•"
+            icon = "⚠️ "
 
-        print(f"[{icon}] {summary}")
+        print(f"{icon}  {summary}")
 
     def _print_by_category(self, results: List[DiagnosticResult]) -> None:
         """Print results grouped by category."""
@@ -366,33 +378,27 @@ class AniScrapyDoctor:
 
     def _print_category(self, category: str, results: List[DiagnosticResult]) -> None:
         """Print a category section."""
-        # Get statuses for category
         statuses = [r.status for r in results]
         category_icon = self._get_category_icon(statuses)
 
-        print(f"[{category_icon}] {category}")
+        print(f"{category_icon} {category}")
 
         for r in results:
-            icon = self._get_icon(r.status)
             prefix = "* " if r.details.get("recommended") else ""
-            rprint(f"  {icon} {prefix}{r.name}: {r.message}")
-
-    def _get_icon(self, status: str) -> str:
-        """Get icon for a status."""
-        icons = {
-            self.STATUS_PASS: "•",
-            self.STATUS_WARN: "•",
-            self.STATUS_FAIL: "•",
-        }
-        return icons.get(status, "?")
+            if r.status == self.STATUS_FAIL:
+                rprint(f"  - [red]{r.name}[/red]: [red]{r.message}[/red]")
+            elif r.status == self.STATUS_WARN:
+                rprint(f"  - [yellow]{r.name}[/yellow]: [yellow]{r.message}[/yellow]")
+            else:
+                rprint(f"  - {prefix}{r.name}: {r.message}")
 
     def _get_category_icon(self, statuses: List[str]) -> str:
         """Get icon for a category based on its statuses."""
         if all(s == self.STATUS_PASS for s in statuses):
-            return "✓"
+            return "✅"
         elif any(s == self.STATUS_FAIL for s in statuses):
-            return "✗"
-        return "•"
+            return "❌ "
+        return "⚠️ "
 
 
 if __name__ == "__main__":
