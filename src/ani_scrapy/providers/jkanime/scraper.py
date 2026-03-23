@@ -54,6 +54,11 @@ class JKAnimeScraper(BaseScraper):
             "Mediafire": self._get_mediafire_file_link,
         }
 
+        self._iframe_link_getters = {
+            "Magi": self._get_magi_link,
+            "Streamwish": self._get_streamwish_link,
+        }
+
     async def _safe_click(
         self,
         element,
@@ -434,7 +439,14 @@ class JKAnimeScraper(BaseScraper):
             html, episode_number
         )
         all_download_links: list[DownloadLinkInfo] = [
-            DownloadLinkInfo(server=link["server"], url=link["url"])
+            DownloadLinkInfo(
+                server=link["server"],
+                url=(
+                    None
+                    if link["url"] and "c1.jkplayers.com" in link["url"]
+                    else link["url"]
+                ),
+            )
             for link in download_links_data
         ]
 
@@ -454,9 +466,144 @@ class JKAnimeScraper(BaseScraper):
     ) -> EpisodeDownloadInfo:
         """Get iframe download links for an episode."""
 
-        logger.warning("iframe download links not supported for JKAnime")
+        logger.info(
+            "Getting iframe download links | anime_id={anime_id} episode_number={episode_number}",
+            anime_id=anime_id,
+            episode_number=episode_number,
+        )
 
-        return EpisodeDownloadInfo(episode_number=episode_number, download_links=[])
+        browser = await self._get_browser()
+        async with await browser.new_page() as page:
+            return await self._get_iframe_download_links_internal(
+                page, anime_id, episode_number
+            )
+
+    async def _get_iframe_download_links_internal(
+        self,
+        page,
+        anime_id: str,
+        episode_number: int,
+    ) -> EpisodeDownloadInfo:
+        """Get iframe download links using page from Playwright."""
+
+        url = f"{BASE_URL}/{anime_id}/{episode_number}"
+        await page.goto(url)
+
+        await page.wait_for_selector("#collapseServers")
+
+        download_links: list[DownloadLinkInfo] = []
+
+        for server_name, link_getter in self._iframe_link_getters.items():
+            logger.debug("Looking for server | server={server}", server=server_name)
+            server_link = await page.query_selector(
+                f'#collapseServers a:has-text("{server_name}")'
+            )
+
+            if not server_link:
+                logger.warning(
+                    "Server not found in page | server={server}",
+                    server=server_name,
+                )
+                continue
+
+            await server_link.click()
+            await page.wait_for_timeout(3000)
+
+            try:
+                download_url = await link_getter(page)
+                if download_url is not None:
+                    download_links.append(
+                        DownloadLinkInfo(server=server_name, url=download_url)
+                    )
+                    logger.info(
+                        "Got iframe URL | server={server} url={url}",
+                        server=server_name,
+                        url=download_url,
+                    )
+            except Exception as e:
+                logger.warning(
+                    "Failed to get link for server | server={server} error={error}",
+                    server=server_name,
+                    error=str(e),
+                )
+                download_links.append(DownloadLinkInfo(server=server_name, url=None))
+
+        logger.info(
+            "Iframe download links fetched | count={count}",
+            count=len(download_links),
+        )
+        return EpisodeDownloadInfo(
+            episode_number=episode_number,
+            download_links=download_links,
+        )
+
+    async def _get_magi_link(self, page) -> str | None:
+        """Get Magi server link."""
+        logger.debug("Getting Magi link")
+
+        video_box_iframe = await page.query_selector("#video_box iframe")
+        if not video_box_iframe:
+            logger.warning("Video box iframe not found")
+            return None
+
+        src = await video_box_iframe.get_attribute("src")
+        logger.debug("Video box iframe src | src={src}", src=src)
+
+        frame = page.frame(url=lambda u: "jkanime.net/jkplayer" in u)
+        if not frame:
+            logger.warning("JKPlayer frame not found")
+            return None
+
+        logger.debug("Found jkanime frame, waiting for content...")
+
+        try:
+            magi_video = await frame.wait_for_selector(
+                "video#video_html5_api", timeout=5000
+            )
+            if magi_video:
+                source = await magi_video.query_selector("source")
+                if source:
+                    download_url = await source.get_attribute("src")
+                    logger.debug("Found Magi source | src={src}", src=download_url)
+                    return download_url
+        except Exception:
+            logger.warning("Magi video not found")
+
+        return None
+
+    async def _get_streamwish_link(self, page) -> str | None:
+        """Get Streamwish server link."""
+        logger.debug("Getting Streamwish link")
+
+        video_box_iframe = await page.query_selector("#video_box iframe")
+        if not video_box_iframe:
+            logger.warning("Video box iframe not found")
+            return None
+
+        src = await video_box_iframe.get_attribute("src")
+        logger.debug("Video box iframe src | src={src}", src=src)
+
+        frame = page.frame(url=lambda u: "jkanime.net/jkplayer" in u)
+        if not frame:
+            logger.warning("JKPlayer frame not found")
+            return None
+
+        logger.debug("Found jkanime frame, waiting for content...")
+
+        try:
+            streamwish_iframe = await frame.wait_for_selector(
+                'iframe[src*="sfastwish.com"]', timeout=5000
+            )
+            if streamwish_iframe:
+                iframe_src = await streamwish_iframe.get_attribute("src")
+                video_id = iframe_src.split("/")[-1]
+                download_url = f"{SW_DOWNLOAD_URL}/{video_id}"
+                logger.debug("Found Streamwish iframe | src={src}", src=iframe_src)
+                return download_url
+        except Exception:
+            logger.warning("Streamwish iframe not found")
+
+        return None
 
     async def get_file_download_link(
         self,
