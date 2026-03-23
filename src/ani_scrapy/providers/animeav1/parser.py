@@ -115,7 +115,7 @@ class AnimeAV1Parser:
         else:
             # Fallback to CDN URL using ID
             media_id = media_data.get("id", "")
-            poster = f"{ANIME_COVER_URL}/screenshots/{media_id}.jpg"
+            poster = f"{ANIME_COVER_URL}/covers/{media_id}.jpg"
 
         # Genres
         genres = [g.get("name", "") for g in media_data.get("genres", [])]
@@ -128,7 +128,7 @@ class AnimeAV1Parser:
             for ep in episodes_data:
                 ep_number = ep.get("number", 0)
                 image_preview = (
-                    f"{ANIME_COVER_URL}/screenshots/{media_id}/{ep_number}.jpg"
+                    f"{ANIME_COVER_URL}/covers/{media_id}/{ep_number}.jpg"
                 )
                 episodes.append(
                     EpisodeInfo(
