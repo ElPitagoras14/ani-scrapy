@@ -16,9 +16,7 @@ from rich import print as rprint
 
 from ani_scrapy import JKAnimeScraper
 
-BRAVE_PATH = (
-    r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-)
+BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
 console = Console()
 

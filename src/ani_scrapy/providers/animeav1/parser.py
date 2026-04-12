@@ -127,9 +127,7 @@ class AnimeAV1Parser:
             episodes_data = media_data.get("episodes", [])
             for ep in episodes_data:
                 ep_number = ep.get("number", 0)
-                image_preview = (
-                    f"{ANIME_COVER_URL}/covers/{media_id}/{ep_number}.jpg"
-                )
+                image_preview = f"{ANIME_COVER_URL}/covers/{media_id}/{ep_number}.jpg"
                 episodes.append(
                     EpisodeInfo(
                         number=ep_number,
@@ -228,9 +226,30 @@ class AnimeAV1Parser:
                 if slug_match:
                     result["slug"] = slug_match.group(1)
 
-        # synopsis
-        synopsis_match = re.search(r'synopsis:\s*"([^"]*)"', media_str)
-        result["synopsis"] = synopsis_match.group(1) if synopsis_match else ""
+        # synopsis - handle escaped quotes
+        synopsis = ""
+        synopsis_pos = media_str.find("synopsis:")
+        if synopsis_pos != -1:
+            search_start = synopsis_pos + 9
+            # Skip whitespace and find opening quote
+            i = search_start
+            while i < len(media_str) and media_str[i] in " \t\n":
+                i += 1
+            if i < len(media_str) and media_str[i] == '"':
+                i += 1
+                quote_start = i
+                # Find unescaped closing quote
+                while i < len(media_str):
+                    if media_str[i] == "\\":
+                        i += 2
+                    elif media_str[i] == '"':
+                        synopsis = media_str[quote_start:i]
+                        break
+                    else:
+                        i += 1
+                # Unescape \" in synopsis
+                synopsis = synopsis.replace('\\"', '"')
+        result["synopsis"] = synopsis
 
         # category
         cat_match = re.search(r'category:\s*\{[^}]*name:\s*"([^"]+)"', media_str)

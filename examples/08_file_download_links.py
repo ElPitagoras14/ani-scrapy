@@ -16,9 +16,7 @@ from rich import print as rprint
 
 from ani_scrapy import JKAnimeScraper, AnimeAV1Scraper
 
-BRAVE_PATH = (
-    r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-)
+BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
 console = Console()
 
@@ -40,8 +38,7 @@ async def main():
         )
 
         rprint(
-            "[bold yellow]=== Step 1: Get Table Download Links ==="
-            + "[/bold yellow]"
+            "[bold yellow]=== Step 1: Get Table Download Links ===" + "[/bold yellow]"
         )
         start = time.perf_counter()
         table_links = await scraper.get_table_download_links(
@@ -89,26 +86,19 @@ async def main():
             start_link = time.perf_counter()
 
             try:
-                final_url = await scraper.get_file_download_link(
-                    download_info=link
-                )
+                final_url = await scraper.get_file_download_link(download_info=link)
                 elapsed_link = time.perf_counter() - start_link
 
                 if final_url:
                     url_display = (
-                        final_url[:60] + "..."
-                        if len(final_url) > 60
-                        else final_url
+                        final_url[:60] + "..." if len(final_url) > 60 else final_url
                     )
                     results_table.add_row(link.server, url_display)
                     rprint(f"  [green]✓ Got URL[/green] ({elapsed_link:.2f}s)")
                 else:
-                    results_table.add_row(
-                        link.server, "[red]Failed to resolve[/red]"
-                    )
+                    results_table.add_row(link.server, "[red]Failed to resolve[/red]")
                     rprint(
-                        "  [red]✗ Failed to resolve[/red] "
-                        + f"({elapsed_link:.2f}s)"
+                        "  [red]✗ Failed to resolve[/red] " + f"({elapsed_link:.2f}s)"
                     )
             except Exception as e:
                 rprint(f"  [red]✗ Error: {e}[/red]")
@@ -116,9 +106,7 @@ async def main():
 
         console.print(results_table)
 
-    rprint(
-        "\n[bold cyan]=== AnimeAV1: Iframe Download Links ===[/bold cyan]\n"
-    )
+    rprint("\n[bold cyan]=== AnimeAV1: Iframe Download Links ===[/bold cyan]\n")
 
     async with AnimeAV1Scraper(
         headless=True, executable_path=BRAVE_PATH
@@ -131,9 +119,7 @@ async def main():
             + f"Episode {episode_number_av1}\n"
         )
 
-        rprint(
-            "[bold yellow]=== Step 1: Get Iframe Download Links ===[/bold yellow]"
-        )
+        rprint("[bold yellow]=== Step 1: Get Iframe Download Links ===[/bold yellow]")
         start_av1 = time.perf_counter()
         iframe_links = await scraper_av1.get_iframe_download_links(
             anime_id=anime_id_av1, episode_number=episode_number_av1
@@ -180,26 +166,19 @@ async def main():
             start_link = time.perf_counter()
 
             try:
-                final_url = await scraper_av1.get_file_download_link(
-                    download_info=link
-                )
+                final_url = await scraper_av1.get_file_download_link(download_info=link)
                 elapsed_link = time.perf_counter() - start_link
 
                 if final_url:
                     url_display = (
-                        final_url[:60] + "..."
-                        if len(final_url) > 60
-                        else final_url
+                        final_url[:60] + "..." if len(final_url) > 60 else final_url
                     )
                     results_iframe.add_row(link.server, url_display)
                     rprint(f"  [green]✓ Got URL[/green] ({elapsed_link:.2f}s)")
                 else:
-                    results_iframe.add_row(
-                        link.server, "[red]Failed to resolve[/red]"
-                    )
+                    results_iframe.add_row(link.server, "[red]Failed to resolve[/red]")
                     rprint(
-                        "  [red]✗ Failed to resolve[/red] "
-                        + f"({elapsed_link:.2f}s)"
+                        "  [red]✗ Failed to resolve[/red] " + f"({elapsed_link:.2f}s)"
                     )
             except Exception as e:
                 rprint(f"  [red]✗ Error: {e}[/red]")

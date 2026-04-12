@@ -19,9 +19,7 @@ from rich import print as rprint
 from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper
 from ani_scrapy.core.schemas import AnimeInfo
 
-BRAVE_PATH = (
-    r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-)
+BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
 console = Console()
 
@@ -43,9 +41,7 @@ def format_info(anime: AnimeInfo):
     text.append("\n\n")
 
     text.append("Genres: ", style="bold cyan")
-    text.append(
-        ", ".join(anime.genres) if anime.genres else "N/A", style="white"
-    )
+    text.append(", ".join(anime.genres) if anime.genres else "N/A", style="white")
     text.append("\n\n")
 
     text.append("Description:\n", style="bold yellow")
@@ -62,9 +58,7 @@ async def main():
     """Run the anime info example."""
     rprint("[bold cyan]=== Example 02: Get Anime Information[/bold cyan]\n")
 
-    async with AnimeFLVScraper(
-        headless=False, executable_path=BRAVE_PATH
-    ) as scraper:
+    async with AnimeFLVScraper(headless=False, executable_path=BRAVE_PATH) as scraper:
         anime_id = "gachiakuta"
 
         rprint(f"[bold]Fetching info for:[/bold] '{anime_id}'\n")
@@ -105,8 +99,7 @@ async def main():
         anime_id = "gachiakuta"
 
         rprint(
-            f"[bold]Fetching info for:[/bold] '{anime_id}' "
-            + "(using Brave browser)"
+            f"[bold]Fetching info for:[/bold] '{anime_id}' " + "(using Brave browser)"
         )
         rprint(f"[dim]Browser: {BRAVE_PATH}[/dim]\n")
 
@@ -140,7 +133,7 @@ async def main():
         rprint(f"\n[dim]Elapsed time: {elapsed:.2f}s[/dim]")
 
     async with AnimeAV1Scraper() as scraper_av1:
-        anime_id = "one-piece"
+        anime_id = "yuusha-kei-ni-shosu-choubatsu-yuusha-9004-tai-keimu-kiroku"
 
         rprint(f"\n[bold]Fetching info for:[/bold] '{anime_id}' (AnimeAV1)")
 
