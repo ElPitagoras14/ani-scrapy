@@ -182,7 +182,7 @@ class AnimeFLVScraper(BaseScraper):
             episode_number=episode_number,
         )
 
-        url = f"{ANIME_VIDEO_ENDPOINT}/{anime_id}-{episode_number}"
+        url = f"{BASE_URL}/{ANIME_VIDEO_ENDPOINT}/{anime_id}-{episode_number}"
 
         browser = await self._get_browser()
         async with await browser.new_page() as page:

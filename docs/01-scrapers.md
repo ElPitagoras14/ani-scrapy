@@ -157,7 +157,7 @@ Resolves final download URLs from intermediate links.
 - `get_anime_info` with `include_episodes=True` requires a browser.
 - `get_new_episodes` requires a browser.
 - `get_table_download_links` requires a browser.
-- `get_iframe_download_links` is not supported (returns empty result).
+- `get_iframe_download_links` requires a browser.
 
 ### AnimeAV1
 

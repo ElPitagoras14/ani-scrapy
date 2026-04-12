@@ -6,3 +6,5 @@ For contributing guidelines, see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 - [Scraper Methods](./01-scrapers.md)
 - [Common Issues](./02-common-issues.md)
+- [CLI Commands](./03-cli.md)
+- [Error Handling](./04-error-handling.md)
