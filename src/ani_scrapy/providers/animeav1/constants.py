@@ -17,3 +17,5 @@ RELATED_TYPE_MAP = {
     1: _RelatedType.PREQUEL,
     2: _RelatedType.SEQUEL,
 }
+
+SUPPORTED_SERVERS = ["PDrain", "UPNShare"]

@@ -24,6 +24,22 @@ BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.ex
 console = Console()
 
 
+# === CONFIGURATION ===
+# Enable/disable scrapers
+ENABLE_ANIMEFLV = False
+ENABLE_JKANIME = False
+ENABLE_ANIMEAV1 = True
+
+# Variables for AnimeFLV
+ANIMEFLV_ANIME_ID = "yomi-no-tsugai"
+
+# Variables for JKAnime
+JKANIME_ANIME_ID = "yomi-no-tsugai"
+
+# Variables for AnimeAV1
+ANIMEAV1_ANIME_ID = "niwatori-fighter"
+
+
 def format_info(anime: AnimeInfo):
     """Format anime info into a rich panel."""
     text = Text()
@@ -58,113 +74,116 @@ async def main():
     """Run the anime info example."""
     rprint("[bold cyan]=== Example 02: Get Anime Information[/bold cyan]\n")
 
-    async with AnimeFLVScraper(headless=False, executable_path=BRAVE_PATH) as scraper:
-        anime_id = "gachiakuta"
+    if ENABLE_ANIMEFLV:
+        rprint(f"[bold]Fetching AnimeFLV info for:[/bold] '{ANIMEFLV_ANIME_ID}'\n")
+        async with AnimeFLVScraper(
+            headless=False, executable_path=BRAVE_PATH
+        ) as scraper:
+            start_time = time.perf_counter()
+            anime = await scraper.get_anime_info(anime_id=ANIMEFLV_ANIME_ID)
+            elapsed = time.perf_counter() - start_time
 
-        rprint(f"[bold]Fetching info for:[/bold] '{anime_id}'\n")
+            console.print(format_info(anime))
 
-        start_time = time.perf_counter()
-        anime = await scraper.get_anime_info(anime_id=anime_id)
-        elapsed = time.perf_counter() - start_time
+            if anime.episodes:
+                table = Table(title="Episodes")
+                table.add_column("#", style="cyan", width=5)
+                table.add_column("Title", style="magenta")
+                table.add_column("Image", style="dim")
 
-        console.print(format_info(anime))
+                for ep in anime.episodes[:10]:
+                    table.add_row(
+                        str(ep.number),
+                        f"Episode {ep.number}",
+                        ep.image_preview[:50] + "..." if ep.image_preview else "-",
+                    )
 
-        if anime.episodes:
-            table = Table(title="Episodes")
-            table.add_column("#", style="cyan", width=5)
-            table.add_column("Title", style="magenta")
-            table.add_column("Image", style="dim")
+                console.print(table)
 
-            for ep in anime.episodes[:10]:
-                table.add_row(
-                    str(ep.number),
-                    f"Episode {ep.number}",
-                    ep.image_preview[:50] + "..." if ep.image_preview else "-",
-                )
+                if len(anime.episodes) > 10:
+                    console.print(
+                        f"\n[dim]... and {len(anime.episodes) - 10} more "
+                        + "episodes[/dim]"
+                    )
 
-            console.print(table)
+            rprint(f"\n[dim]Elapsed time: {elapsed:.2f}s[/dim]")
+    else:
+        rprint("[dim][yellow]AnimeFLV disabled[/yellow][/dim]")
 
-            if len(anime.episodes) > 10:
-                console.print(
-                    f"\n[dim]... and {len(anime.episodes) - 10} more "
-                    + "episodes[/dim]"
-                )
-
-        rprint(f"\n[dim]Elapsed time: {elapsed:.2f}s[/dim]")
-
-    async with JKAnimeScraper(
-        headless=False,
-        executable_path=BRAVE_PATH,
-    ) as scraper:
-        anime_id = "gachiakuta"
-
+    if ENABLE_JKANIME:
         rprint(
-            f"[bold]Fetching info for:[/bold] '{anime_id}' " + "(using Brave browser)"
+            f"\n[bold]Fetching JKAnime info for:[/bold] '{JKANIME_ANIME_ID}' "
+            + "(using Brave browser)"
         )
         rprint(f"[dim]Browser: {BRAVE_PATH}[/dim]\n")
+        async with JKAnimeScraper(
+            headless=False,
+            executable_path=BRAVE_PATH,
+        ) as scraper:
+            start_time = time.perf_counter()
+            anime = await scraper.get_anime_info(anime_id=JKANIME_ANIME_ID)
+            elapsed = time.perf_counter() - start_time
 
-        start_time = time.perf_counter()
-        anime = await scraper.get_anime_info(anime_id=anime_id)
-        elapsed = time.perf_counter() - start_time
+            console.print(format_info(anime))
 
-        console.print(format_info(anime))
+            if anime.episodes:
+                table = Table(title="Episodes")
+                table.add_column("#", style="cyan", width=5)
+                table.add_column("Title", style="magenta")
+                table.add_column("Image", style="dim")
 
-        if anime.episodes:
-            table = Table(title="Episodes")
-            table.add_column("#", style="cyan", width=5)
-            table.add_column("Title", style="magenta")
-            table.add_column("Image", style="dim")
+                for ep in anime.episodes[:10]:
+                    table.add_row(
+                        str(ep.number),
+                        f"Episode {ep.number}",
+                        ep.image_preview[:50] + "..." if ep.image_preview else "-",
+                    )
 
-            for ep in anime.episodes[:10]:
-                table.add_row(
-                    str(ep.number),
-                    f"Episode {ep.number}",
-                    ep.image_preview[:50] + "..." if ep.image_preview else "-",
-                )
+                console.print(table)
 
-            console.print(table)
+                if len(anime.episodes) > 10:
+                    console.print(
+                        f"\n[dim]... and {len(anime.episodes) - 10} more "
+                        + "episodes[/dim]"
+                    )
 
-            if len(anime.episodes) > 10:
-                console.print(
-                    f"\n[dim]... and {len(anime.episodes) - 10} more "
-                    + "episodes[/dim]"
-                )
+            rprint(f"\n[dim]Elapsed time: {elapsed:.2f}s[/dim]")
+    else:
+        rprint("[dim][yellow]JKAnime disabled[/yellow][/dim]")
 
-        rprint(f"\n[dim]Elapsed time: {elapsed:.2f}s[/dim]")
+    if ENABLE_ANIMEAV1:
+        rprint(f"\n[bold]Fetching AnimeAV1 info for:[/bold] '{ANIMEAV1_ANIME_ID}'")
+        async with AnimeAV1Scraper() as scraper_av1:
+            start_time = time.perf_counter()
+            anime = await scraper_av1.get_anime_info(anime_id=ANIMEAV1_ANIME_ID)
+            elapsed = time.perf_counter() - start_time
 
-    async with AnimeAV1Scraper() as scraper_av1:
-        anime_id = "yuusha-kei-ni-shosu-choubatsu-yuusha-9004-tai-keimu-kiroku"
+            console.print(format_info(anime))
 
-        rprint(f"\n[bold]Fetching info for:[/bold] '{anime_id}' (AnimeAV1)")
+            if anime.episodes:
+                table = Table(title="Episodes")
+                table.add_column("#", style="cyan", width=5)
+                table.add_column("Title", style="magenta")
+                table.add_column("Image", style="dim")
 
-        start_time = time.perf_counter()
-        anime = await scraper_av1.get_anime_info(anime_id=anime_id)
-        elapsed = time.perf_counter() - start_time
+                for ep in anime.episodes[:10]:
+                    table.add_row(
+                        str(ep.number),
+                        f"Episode {ep.number}",
+                        ep.image_preview[:50] + "..." if ep.image_preview else "-",
+                    )
 
-        console.print(format_info(anime))
+                console.print(table)
 
-        if anime.episodes:
-            table = Table(title="Episodes")
-            table.add_column("#", style="cyan", width=5)
-            table.add_column("Title", style="magenta")
-            table.add_column("Image", style="dim")
+                if len(anime.episodes) > 10:
+                    console.print(
+                        f"\n[dim]... and {len(anime.episodes) - 10} more "
+                        + "episodes[/dim]"
+                    )
 
-            for ep in anime.episodes[:10]:
-                table.add_row(
-                    str(ep.number),
-                    f"Episode {ep.number}",
-                    ep.image_preview[:50] + "..." if ep.image_preview else "-",
-                )
-
-            console.print(table)
-
-            if len(anime.episodes) > 10:
-                console.print(
-                    f"\n[dim]... and {len(anime.episodes) - 10} more "
-                    + "episodes[/dim]"
-                )
-
-        rprint(f"\n[dim]Elapsed time: {elapsed:.2f}s[/dim]")
+            rprint(f"\n[dim]Elapsed time: {elapsed:.2f}s[/dim]")
+    else:
+        rprint("[dim][yellow]AnimeAV1 disabled[/yellow][/dim]")
 
     rprint("\n[bold cyan]=== Example Complete ===[/bold cyan]")
 
