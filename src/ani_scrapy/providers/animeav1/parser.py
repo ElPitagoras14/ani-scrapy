@@ -150,9 +150,8 @@ class AnimeAV1Parser:
                 )
             )
 
-        # Is finished - check if endDate exists and is not null
-        end_date_value = media_data.get("endDate")
-        is_finished = end_date_value is not None and end_date_value != ""
+        # Is finished - parse from HTML body div
+        is_finished = self._parse_finished_status_from_html(html)
 
         return AnimeInfo(
             id=anime_id,
@@ -290,11 +289,31 @@ class AnimeAV1Parser:
         else:
             result["relations"] = []
 
-        # endDate (for is_finished) - extract actual value
-        end_date_match = re.search(r'endDate:\s*"([^"]*)"', media_str)
-        result["endDate"] = end_date_match.group(1) if end_date_match else None
-
         return result
+
+    def _parse_finished_status_from_html(self, html: str) -> bool:
+        """Parse is_finished from HTML body div."""
+        soup = BeautifulSoup(html, "lxml")
+
+        # Find div with status classes
+        status_div = soup.select_one("div.flex.flex-wrap.items-center.gap-2.text-sm")
+        if not status_div:
+            return False
+
+        # Get all span children
+        spans = status_div.find_all("span")
+        if not spans:
+            return False
+
+        # Check last span text
+        last_span_text = spans[-1].text.strip()
+
+        if last_span_text == "Finalizado":
+            return True
+        elif last_span_text == "En emisión":
+            return False
+
+        return False
 
     def parse_episode_page(self, html: str, anime_id: str) -> list[DownloadLinkInfo]:
         """Parse episode page from HTML and extract download links."""

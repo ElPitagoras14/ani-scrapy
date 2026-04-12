@@ -441,11 +441,7 @@ class JKAnimeScraper(BaseScraper):
         all_download_links: list[DownloadLinkInfo] = [
             DownloadLinkInfo(
                 server=link["server"],
-                url=(
-                    None
-                    if link["url"] and "c1.jkplayers.com" in link["url"]
-                    else link["url"]
-                ),
+                url=link["url"],
             )
             for link in download_links_data
         ]
