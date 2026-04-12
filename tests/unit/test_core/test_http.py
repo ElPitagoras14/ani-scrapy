@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from ani_scrapy.core.http import AsyncHttpAdapter, BaseHttpAdapter
+from ani_scrapy.core.http import AsyncHttpAdapter
 
 
 @pytest.mark.asyncio

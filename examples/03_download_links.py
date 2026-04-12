@@ -16,9 +16,7 @@ from rich import print as rprint
 
 from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper
 
-BRAVE_PATH = (
-    r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-)
+BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
 console = Console()
 
@@ -39,9 +37,7 @@ async def main():
         headless=True,
         executable_path=BRAVE_PATH,
     ) as scraper_flv:
-        rprint(
-            "[bold yellow]=== AnimeFLV Table Download Links ===[/bold yellow]"
-        )
+        rprint("[bold yellow]=== AnimeFLV Table Download Links ===[/bold yellow]")
         start_flv = time.perf_counter()
         table_links = await scraper_flv.get_table_download_links(
             anime_id=anime_id, episode_number=episode_number
@@ -62,13 +58,10 @@ async def main():
 
             console.print(table)
         else:
-            rprint(
-                "[yellow]No table download links found for AnimeFLV[/yellow]"
-            )
+            rprint("[yellow]No table download links found for AnimeFLV[/yellow]")
 
         rprint(
-            "\n[bold yellow]=== AnimeFLV Iframe Download Links "
-            + "===[/bold yellow]"
+            "\n[bold yellow]=== AnimeFLV Iframe Download Links " + "===[/bold yellow]"
         )
         iframe_links = await scraper_flv.get_iframe_download_links(
             anime_id=anime_id, episode_number=episode_number
@@ -106,9 +99,7 @@ async def main():
                         )
                         rprint(f"[cyan]{final_url}[/cyan]")
         else:
-            rprint(
-                "[yellow]No iframe download links found for AnimeFLV[/yellow]"
-            )
+            rprint("[yellow]No iframe download links found for AnimeFLV[/yellow]")
 
         elapsed_flv = time.perf_counter() - start_flv
         rprint(f"\n[dim]AnimeFLV total time: {elapsed_flv:.2f}s[/dim]")
@@ -122,9 +113,7 @@ async def main():
             + f"Episode {episode_number}\n"
         )
 
-        rprint(
-            "[bold yellow]=== JKAnime Table Download Links ===[/bold yellow]"
-        )
+        rprint("[bold yellow]=== JKAnime Table Download Links ===[/bold yellow]")
         start_jk = time.perf_counter()
         table_links = await scraper_jk.get_table_download_links(
             anime_id=anime_id, episode_number=episode_number
@@ -171,13 +160,10 @@ async def main():
                     rprint("[yellow]Could not get file download link[/yellow]")
             else:
                 rprint(
-                    "[yellow]No supported servers found for file download"
-                    + "[/yellow]"
+                    "[yellow]No supported servers found for file download" + "[/yellow]"
                 )
         else:
-            rprint(
-                "[yellow]No table download links found for JKAnime[/yellow]"
-            )
+            rprint("[yellow]No table download links found for JKAnime[/yellow]")
 
         elapsed_jk = time.perf_counter() - start_jk
         rprint(f"\n[dim]JKAnime total time: {elapsed_jk:.2f}s[/dim]")
@@ -191,9 +177,7 @@ async def main():
             + f"Episode {episode_number}\n"
         )
 
-        rprint(
-            "[bold yellow]=== AnimeAV1 Table Download Links ===[/bold yellow]"
-        )
+        rprint("[bold yellow]=== AnimeAV1 Table Download Links ===[/bold yellow]")
         start_av1 = time.perf_counter()
         table_links = await scraper_av1.get_table_download_links(
             anime_id=anime_id, episode_number=episode_number
@@ -240,17 +224,12 @@ async def main():
                     rprint("[yellow]Could not get file download link[/yellow]")
             else:
                 rprint(
-                    "[yellow]No supported servers found for file download"
-                    + "[/yellow]"
+                    "[yellow]No supported servers found for file download" + "[/yellow]"
                 )
         else:
-            rprint(
-                "[yellow]No table download links found for AnimeAV1[/yellow]"
-            )
+            rprint("[yellow]No table download links found for AnimeAV1[/yellow]")
 
-        rprint(
-            "\n[bold yellow]=== AnimeAV1 Iframe Download Links ===[/bold yellow]"
-        )
+        rprint("\n[bold yellow]=== AnimeAV1 Iframe Download Links ===[/bold yellow]")
         iframe_links = await scraper_av1.get_iframe_download_links(
             anime_id=anime_id, episode_number=episode_number
         )
@@ -295,9 +274,7 @@ async def main():
                 else:
                     rprint("[yellow]Could not get file download link[/yellow]")
         else:
-            rprint(
-                "[yellow]No iframe download links found for AnimeAV1[/yellow]"
-            )
+            rprint("[yellow]No iframe download links found for AnimeAV1[/yellow]")
 
         elapsed_av1 = time.perf_counter() - start_av1
         rprint(f"\n[dim]AnimeAV1 total time: {elapsed_av1:.2f}s[/dim]")
