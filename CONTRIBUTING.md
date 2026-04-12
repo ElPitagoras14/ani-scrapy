@@ -50,48 +50,26 @@ uv run ruff check src/
 
 ## Git Conventions
 
-### Branch Naming
-
-Format: `<type>/<short-description>`
-
-| Type | Description |
-| ---- |-------------|
-| `feat` | new feature |
-| `fix` | bug fix |
-| `refactor` | code improvement without behavior change |
-| `chore` | maintenance, config, dependencies, CI, docs |
-
-Example:
-```bash
-git checkout -b feat/add-user-authentication
-```
-
-### Commit Message
-
-Format: `<type>(scope): <short description>`
-
-| Type | Description |
-| ---- |-------------|
-| `feat` | new feature |
-| `fix` | bug fix |
-| `refactor` | code improvement without behavior change |
-| `chore` | maintenance, dependencies, CI, docs |
-
-Examples:
-```
-feat(auth): add JWT authentication
-fix(parser): handle missing episode field
-chore(deps): update playwright to latest version
-```
+Follow the conventions defined in [AGENTS.md](./AGENTS.md).
 
 ## Project Structure
 
-| Path | Description |
-|------|-------------|
-| `src/ani_scrapy/<site>/parser.py` | Site HTML parsing |
-| `src/ani_scrapy/<site>/scraper.py` | Network/browser coordination |
-| `src/ani_scrapy/core/http.py` | HTTP I/O |
-| `tests/fixtures/html/` | HTML test fixtures |
+| Path                                      | Description                          |
+|-------------------------------------------|--------------------------------------|
+| `src/ani_scrapy/core/`                    | Core functionality (HTTP, browser, exceptions, schemas) |
+| `src/ani_scrapy/core/base.py`             | Base scraper class                   |
+| `src/ani_scrapy/core/browser.py`         | Playwright browser management        |
+| `src/ani_scrapy/core/http.py`             | HTTP I/O                             |
+| `src/ani_scrapy/core/exceptions.py`       | Custom exceptions hierarchy          |
+| `src/ani_scrapy/core/schemas.py`         | Data schemas (Pydantic models)       |
+| `src/ani_scrapy/core/log.py`              | Logging utilities                    |
+| `src/ani_scrapy/core/constants/`          | Site constants and configuration     |
+| `src/ani_scrapy/providers/<site>/`        | Provider-specific implementation     |
+| `src/ani_scrapy/providers/<site>/parser.py` | Site HTML parsing                 |
+| `src/ani_scrapy/providers/<site>/scraper.py` | Network/browser coordination     |
+| `src/ani_scrapy/providers/<site>/constants.py` | Site URLs and configuration    |
+| `src/ani_scrapy/cli/`                     | CLI commands                         |
+| `tests/fixtures/html/`                    | HTML test fixtures                   |
 
 ## Adding a New Scraper
 

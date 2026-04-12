@@ -140,7 +140,7 @@ async with AnimeFLVScraper(executable_path=brave_path) as scraper:
 
 ## 📖 API Reference
 
-For complete documentation: [Docs index](https://github.com/ElPitagoras14/ani-scrapy/blob/main/docs/README.md)
+For complete documentation: [Docs index](./docs/index.md)
 
 ### Methods Overview:
 
@@ -159,32 +159,29 @@ For complete documentation: [Docs index](https://github.com/ElPitagoras14/ani-sc
 
 ### Method Status Comparison
 
-| Method                      | AnimeFLV    | JKAnime         | AnimeAV1    |
-| --------------------------- | ----------- | --------------- | ----------- |
-| `search_anime`              | ✅ Estatico | ✅ Estatico     | ✅ Estatico |
-| `get_anime_info`            | ✅ Estatico | ⚠️ Dinamico     | ✅ Estatico |
-| `get_new_episodes`          | ✅ Estatico | ⚠️ Dinamico     | ✅ Estatico |
-| `get_table_download_links`  | ✅ Estatico | ⚠️ Dinamico     | ✅ Estatico |
-| `get_iframe_download_links` | ⚠️ Dinamico | ❌ No soportado | ✅ Estatico |
-| `get_file_download_link`    | ⚠️ Dinamico | ⚠️ Dinamico     | ⚠️ Dinamico |
+| Method                      | AnimeFLV    | JKAnime      | AnimeAV1    |
+| --------------------------- | ----------- | ------------ | ----------- |
+| `search_anime`              | ✅ Static   | ✅ Static    | ✅ Static   |
+| `get_anime_info`            | ✅ Static   | ⚠️ Dynamic   | ✅ Static   |
+| `get_new_episodes`          | ✅ Static   | ⚠️ Dynamic   | ✅ Static   |
+| `get_table_download_links` | ✅ Static   | ⚠️ Dynamic   | ✅ Static   |
+| `get_iframe_download_links` | ⚠️ Dynamic  | ⚠️ Dynamic   | ✅ Static   |
+| `get_file_download_link`   | ⚠️ Dynamic  | ⚠️ Dynamic   | ⚠️ Dynamic  |
 
-**Leyenda:**
+**Legend:**
 
-- ✅ Estatico: Metodo funciona sin navegador (solo HTTP)
-- ⚠️ Dinamico: Metodo requiere navegador (Playwright)
-- ❌ No soportado: Metodo no disponible
+- ✅ Static: Method works without browser (HTTP only)
+- ⚠️ Dynamic: Method requires browser (Playwright)
 
 ### Performance Benchmark
 
-Test conditions: Anime "Gachiakuta", Episode 22
+Test conditions: Anime "Gachiakuta", Episode 24, Query: "gach" (2026-04-12)
 
 | Provider | search_anime | get_anime_info | get_table_download_links | get_iframe_download_links |
-| -------- | ------------ | -------------- | ------------------------ | ------------------------- |
-| AnimeFLV | 642.36 ms    | 612.21 ms      | 447.42 ms                | ERROR                     |
-| JKAnime  | 465.78 ms    | 28571.15 ms    | 1431.62 ms               | -                         |
-| AnimeAV1 | 583.60 ms    | 319.22 ms      | 273.42 ms                | 275.51 ms                 |
-
-\*JKAnime `get_iframe_download_links` returns empty result (not supported)
+| -------- | ------------ | -------------- | ------------------------- | ------------------------- |
+| AnimeFLV | 316.18 ms    | 849.96 ms      | 251.40 ms                | 5070.68 ms                |
+| JKAnime  | 468.76 ms    | 30945.13 ms    | 1661.44 ms               | 8802.14 ms                |
+| AnimeAV1 | 517.24 ms    | 355.09 ms      | 298.78 ms                | 299.14 ms                 |
 
 ### Browser Classes:
 
