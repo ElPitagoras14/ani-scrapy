@@ -217,7 +217,8 @@ class AnimeAV1Scraper(BaseScraper):
     async def _get_upnshare_download_link(self, url: str) -> str | None:
         """Get UPNShare download link."""
 
-        dl_url = url + "&dl=1" if "&" not in url else url + "&dl=1"
+        separator = "&" if "?" in url else "?"
+        dl_url = f"{url}{separator}dl=1"
 
         try:
             browser = await self._get_browser()

@@ -4,6 +4,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from typing import List
 
+from ani_scrapy.core.exceptions import ScraperParseError
 from ani_scrapy.core.schemas import (
     SearchAnimeInfo,
     AnimeInfo,
@@ -73,7 +74,7 @@ class JKAnimeParser:
 
         side_anime_info = soup.select_one("div.col-lg-2.picd")
         if not side_anime_info:
-            raise ValueError("Could not find anime info container")
+            raise ScraperParseError("Could not find anime info container")
 
         poster_element = side_anime_info.find("img")
         poster = str(poster_element.get("src", "")).strip() if poster_element else ""
