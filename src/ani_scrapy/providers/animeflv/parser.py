@@ -9,8 +9,8 @@ from ani_scrapy.core.schemas import (
     AnimeInfo,
     EpisodeInfo,
     RelatedInfo,
-    _AnimeType,
-    _RelatedType,
+    AnimeType,
+    RelatedType,
 )
 from ani_scrapy.providers.animeflv.constants import (
     BASE_EPISODE_IMG_URL,
@@ -117,7 +117,7 @@ class AnimeFLVParser:
                         )
                     )
 
-        episodes: list[EpisodeInfo | None] = []
+        episodes: list[EpisodeInfo] = []
         if include_episodes:
             episodes = AnimeFLVParser._extract_episodes_from_json(soup, anime_id)
 
@@ -193,12 +193,14 @@ class AnimeFLVParser:
         anime_thumb_id = info_ids[0]
         episodes = []
 
-        for episode_number, _ in reversed(episodes_data):
-            number = int(episode_number)
-            image_preview = f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{number}/th_3.jpg"
+        for raw_episode_number, _ in reversed(episodes_data):
+            episode_number = int(raw_episode_number)
+            image_preview = (
+                f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{episode_number}/th_3.jpg"
+            )
             episodes.append(
                 EpisodeInfo(
-                    number=number,
+                    episode_number=episode_number,
                     anime_id=anime_id,
                     image_preview=image_preview,
                 )
@@ -207,43 +209,14 @@ class AnimeFLVParser:
         return episodes
 
     @staticmethod
-    def _extract_episodes(soup: BeautifulSoup, anime_id: str) -> List[EpisodeInfo]:
-        """Extract episode information."""
-        episodes = []
-        episode_elements = soup.select("ul.Episodes li")
-
-        for episode_element in episode_elements:
-            try:
-                number_element = episode_element.select_one("p")
-                if number_element:
-                    number_text = number_element.text.strip()
-                    number = int(number_text) if number_text.isdigit() else 0
-                else:
-                    continue
-
-                img_element = episode_element.select_one("img")
-                preview = (
-                    str(img_element.get("src", "")).strip() if img_element else None
-                )
-
-                episodes.append(
-                    EpisodeInfo(number=number, anime_id=anime_id, image_preview=preview)
-                )
-
-            except Exception:
-                continue
-
-        return episodes
-
-    @staticmethod
-    def _map_anime_type(site_type: str) -> _AnimeType:
+    def _map_anime_type(site_type: str) -> AnimeType:
         """Map site-specific anime types to shared enum."""
-        return ANIME_TYPE_MAP.get(site_type, _AnimeType.TV)
+        return ANIME_TYPE_MAP.get(site_type, AnimeType.TV)
 
     @staticmethod
-    def _map_related_type(site_type: str) -> _RelatedType:
+    def _map_related_type(site_type: str) -> RelatedType:
         """Map site-specific related types to shared enum."""
-        return RELATED_TYPE_MAP.get(site_type, _RelatedType.PREQUEL)
+        return RELATED_TYPE_MAP.get(site_type, RelatedType.PREQUEL)
 
     @staticmethod
     def parse_table_download_links(html: str, episode_number: int) -> list[dict]:

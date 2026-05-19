@@ -9,7 +9,7 @@ from ani_scrapy.core.schemas import (
     SearchAnimeInfo,
     AnimeInfo,
     EpisodeInfo,
-    _AnimeType,
+    AnimeType,
 )
 from ani_scrapy.providers.jkanime.constants import ANIME_TYPE_MAP
 from ani_scrapy.core.constants.general import MONTH_MAP
@@ -82,7 +82,7 @@ class JKAnimeParser:
         info_container = side_anime_info.select_one("div.card-bod")
         list_info = info_container.find_all("li") if info_container else []
 
-        anime_type = _AnimeType.TV
+        anime_type = AnimeType.TV
         if list_info:
             type_text = list_info[0].text.strip()
             anime_type = JKAnimeParser._map_anime_type(type_text)
@@ -144,7 +144,7 @@ class JKAnimeParser:
             except (ValueError, IndexError):
                 pass
 
-        episodes: list[EpisodeInfo | None] = []
+        episodes: list[EpisodeInfo] = []
 
         return AnimeInfo(
             id=anime_id,
@@ -179,7 +179,7 @@ class JKAnimeParser:
                 if not href:
                     continue
 
-                number = int(href.split("/")[-2])
+                episode_number = int(href.split("/")[-2])
 
                 img_element = episode.select_one("a > div")
                 image_preview = (
@@ -188,7 +188,7 @@ class JKAnimeParser:
 
                 episodes.append(
                     EpisodeInfo(
-                        number=number,
+                        episode_number=episode_number,
                         anime_id=anime_id,
                         image_preview=image_preview,
                     )
@@ -199,9 +199,9 @@ class JKAnimeParser:
         return episodes
 
     @staticmethod
-    def _map_anime_type(site_type: str) -> _AnimeType:
+    def _map_anime_type(site_type: str) -> AnimeType:
         """Map site-specific anime types to shared enum."""
-        return ANIME_TYPE_MAP.get(site_type, _AnimeType.TV)
+        return ANIME_TYPE_MAP.get(site_type, AnimeType.TV)
 
     @staticmethod
     def parse_table_download_links(html: str, episode_number: int) -> List[dict]:

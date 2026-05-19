@@ -224,7 +224,7 @@ class JKAnimeScraper(BaseScraper):
             logger.info(
                 "Extracted episodes from page | count={count} | last={last}",
                 count=len(new_episodes),
-                last=new_episodes[-1].number if new_episodes else None,
+                last=new_episodes[-1].episode_number if new_episodes else None,
             )
 
             if not new_episodes:
@@ -235,8 +235,8 @@ class JKAnimeScraper(BaseScraper):
                 continue
 
             if idx > 0 and all_episodes:
-                last_extracted = all_episodes[-1].number
-                last_page_episode = new_episodes[-1].number
+                last_extracted = all_episodes[-1].episode_number
+                last_page_episode = new_episodes[-1].episode_number
                 if last_page_episode == last_extracted:
                     logger.warning(
                         "[ITER_{idx}] SAME episodes detected - Continuing",
@@ -358,7 +358,7 @@ class JKAnimeScraper(BaseScraper):
             logger.debug(
                 "Extracted episodes from page | count={count} | last_episode={last}",
                 count=len(new_episodes),
-                last=new_episodes[-1].number if new_episodes else None,
+                last=new_episodes[-1].episode_number if new_episodes else None,
             )
 
             if not new_episodes:
@@ -372,7 +372,7 @@ class JKAnimeScraper(BaseScraper):
 
             new_episodes_found = 0
             for episode in reversed(new_episodes):
-                if episode.number <= last_episode_number:
+                if episode.episode_number <= last_episode_number:
                     finished = True
                     break
                 all_episodes.append(episode)
@@ -381,11 +381,11 @@ class JKAnimeScraper(BaseScraper):
             logger.debug(
                 "New episodes on page | count={count} | last_extracted={last}",
                 count=new_episodes_found,
-                last=all_episodes[-1].number if all_episodes else None,
+                last=all_episodes[-1].episode_number if all_episodes else None,
             )
 
             if idx > 0 and all_episodes:
-                if new_episodes and new_episodes[-1].number == all_episodes[-1].number:
+                if new_episodes and new_episodes[-1].episode_number == all_episodes[-1].episode_number:
                     logger.warning(
                         "Same paged_episode detected, retrying | retries_left={retries}",
                         retries=retries,

@@ -1,4 +1,4 @@
-from ani_scrapy.core.schemas import _AnimeType, _RelatedType
+from ani_scrapy.core.schemas import AnimeType, RelatedType
 
 BASE_URL = "https://jkanime.net"
 SEARCH_ENDPOINT = "buscar"
@@ -7,19 +7,19 @@ SW_DOWNLOAD_URL = "https://flaswish.com/f"
 IMPERSONATE = "chrome"
 
 ANIME_TYPE_MAP = {
-    "Serie": _AnimeType.TV,
-    "Pelicula": _AnimeType.MOVIE,
-    "OVA": _AnimeType.OVA,
-    "Especial": _AnimeType.SPECIAL,
+    "Serie": AnimeType.TV,
+    "Pelicula": AnimeType.MOVIE,
+    "OVA": AnimeType.OVA,
+    "Especial": AnimeType.SPECIAL,
 }
 
 RELATED_TYPE_MAP = {
-    "Adicional": _RelatedType.PARALLEL_HISTORY,
-    "Resumen": _RelatedType.PARALLEL_HISTORY,
-    "Version Alternativa": _RelatedType.PARALLEL_HISTORY,
-    "Personaje Incluido": _RelatedType.PARALLEL_HISTORY,
-    "Secuela": _RelatedType.SEQUEL,
-    "Precuela": _RelatedType.PREQUEL,
+    "Adicional": RelatedType.PARALLEL_HISTORY,
+    "Resumen": RelatedType.PARALLEL_HISTORY,
+    "Version Alternativa": RelatedType.PARALLEL_HISTORY,
+    "Personaje Incluido": RelatedType.PARALLEL_HISTORY,
+    "Secuela": RelatedType.SEQUEL,
+    "Precuela": RelatedType.PREQUEL,
 }
 
 SUPPORTED_SERVERS = ["Streamwish", "Mediafire"]

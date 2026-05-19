@@ -93,8 +93,8 @@ async def main():
 
                 for ep in anime.episodes[:10]:
                     table.add_row(
-                        str(ep.number),
-                        f"Episode {ep.number}",
+                        str(ep.episode_number),
+                        f"Episode {ep.episode_number}",
                         ep.image_preview[:50] + "..." if ep.image_preview else "-",
                     )
 
@@ -134,8 +134,8 @@ async def main():
 
                 for ep in anime.episodes[:10]:
                     table.add_row(
-                        str(ep.number),
-                        f"Episode {ep.number}",
+                        str(ep.episode_number),
+                        f"Episode {ep.episode_number}",
                         ep.image_preview[:50] + "..." if ep.image_preview else "-",
                     )
 
@@ -168,8 +168,8 @@ async def main():
 
                 for ep in anime.episodes[:10]:
                     table.add_row(
-                        str(ep.number),
-                        f"Episode {ep.number}",
+                        str(ep.episode_number),
+                        f"Episode {ep.episode_number}",
                         ep.image_preview[:50] + "..." if ep.image_preview else "-",
                     )
 

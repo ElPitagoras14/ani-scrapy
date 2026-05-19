@@ -118,7 +118,7 @@ class AnimeAV1Scraper(BaseScraper):
         new_episodes = [
             ep
             for ep in anime_info.episodes
-            if ep is not None and ep.number > last_episode_number
+            if ep.episode_number > last_episode_number
         ]
 
         logger.info("New episodes fetched | count={count}", count=len(new_episodes))

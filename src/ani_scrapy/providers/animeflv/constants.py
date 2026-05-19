@@ -1,4 +1,4 @@
-from ani_scrapy.core.schemas import _AnimeType, _RelatedType
+from ani_scrapy.core.schemas import AnimeType, RelatedType
 
 BASE_URL = "https://www4.animeflv.net"
 SEARCH_ENDPOINT = "browse"
@@ -8,17 +8,17 @@ BASE_EPISODE_IMG_URL = "https://cdn.animeflv.net/screenshots"
 SW_DOWNLOAD_URL = "https://hgplaycdn.com/f"
 
 ANIME_TYPE_MAP = {
-    "Anime": _AnimeType.TV,
-    "Pelicula": _AnimeType.MOVIE,
-    "OVA": _AnimeType.OVA,
-    "Especial": _AnimeType.SPECIAL,
+    "Anime": AnimeType.TV,
+    "Pelicula": AnimeType.MOVIE,
+    "OVA": AnimeType.OVA,
+    "Especial": AnimeType.SPECIAL,
 }
 
 RELATED_TYPE_MAP = {
-    "Precuela": _RelatedType.PREQUEL,
-    "Secuela": _RelatedType.SEQUEL,
-    "Historia Paralela": _RelatedType.PARALLEL_HISTORY,
-    "Historia Principal": _RelatedType.MAIN_HISTORY,
+    "Precuela": RelatedType.PREQUEL,
+    "Secuela": RelatedType.SEQUEL,
+    "Historia Paralela": RelatedType.PARALLEL_HISTORY,
+    "Historia Principal": RelatedType.MAIN_HISTORY,
 }
 
 SUPPORTED_SERVERS = ["SW", "YourUpload"]
