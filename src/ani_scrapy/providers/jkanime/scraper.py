@@ -99,8 +99,7 @@ class JKAnimeScraper(BaseScraper):
 
         logger.info("Searching anime | query={query}", query=query)
 
-        if page < 1:
-            raise ValueError("The variable 'page' must be greater than 0")
+        self._validate_page(page)
 
         safe_query = quote(query)
         search_anime_url = f"{SEARCH_ENDPOINT}/{safe_query}"
@@ -124,7 +123,8 @@ class JKAnimeScraper(BaseScraper):
         anime_id: str,
         include_episodes: bool = True,
     ) -> AnimeInfo:
-        """Get anime info."""
+        """Get anime info. JKAnime's parser does not populate
+        ``related_info`` (always empty list)."""
 
         logger.info("Getting anime info | anime_id={anime_id}", anime_id=anime_id)
 
@@ -415,6 +415,8 @@ class JKAnimeScraper(BaseScraper):
             episode_number=episode_number,
         )
 
+        self._validate_episode_number(episode_number)
+
         browser = await self._get_browser()
         async with await browser.new_page() as page:
             return await self._get_table_download_links_internal(
@@ -465,6 +467,8 @@ class JKAnimeScraper(BaseScraper):
             anime_id=anime_id,
             episode_number=episode_number,
         )
+
+        self._validate_episode_number(episode_number)
 
         browser = await self._get_browser()
         async with await browser.new_page() as page:

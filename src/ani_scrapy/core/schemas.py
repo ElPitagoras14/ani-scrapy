@@ -32,6 +32,13 @@ class SearchAnimeInfo(BaseAnimeInfo):
 
 @dataclass
 class PagedSearchAnimeInfo:
+    """Paginated search results.
+
+    ``total_pages`` is ``1`` when the provider either has a single page of
+    results or does not expose pagination (e.g. JKAnime). Only AnimeAV1
+    currently parses real pagination from the site.
+    """
+
     page: int
     total_pages: int
     animes: list[SearchAnimeInfo]
