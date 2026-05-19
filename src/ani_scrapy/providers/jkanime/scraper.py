@@ -22,7 +22,6 @@ from ani_scrapy.core.constants.general import (
     SW_TIMEOUT,
     MEDIAFIRE_TIMEOUT,
 )
-from ani_scrapy.core.exceptions import ScraperTimeoutError
 from ani_scrapy.core.schemas import (
     AnimeInfo,
     DownloadLinkInfo,
@@ -94,25 +93,28 @@ class JKAnimeScraper(BaseScraper):
                 await element.click(force=True)
 
     async def search_anime(self, query: str, page: int = 1) -> PagedSearchAnimeInfo:
-        """Search anime."""
+        """Search anime. JKAnime does not paginate search results;
+        the ``page`` parameter is accepted for interface uniformity
+        and validated, but only ``page=1`` returns data."""
 
         logger.info("Searching anime | query={query}", query=query)
+
+        if page < 1:
+            raise ValueError("The variable 'page' must be greater than 0")
 
         safe_query = quote(query)
         search_anime_url = f"{SEARCH_ENDPOINT}/{safe_query}"
         logger.debug("Using search URL | url={url}", url=search_anime_url)
 
-        try:
+        animes = []
+        if page == 1:
             html_text = await self.http.get(search_anime_url)
-        except ConnectionError as e:
-            raise ScraperTimeoutError(str(e)) from e
-
-        animes = self.parser.parse_search_results(html_text)
+            animes = self.parser.parse_search_results(html_text)
 
         logger.info("Search completed | count={count}", count=len(animes))
 
         return PagedSearchAnimeInfo(
-            page=1,
+            page=page,
             total_pages=1,
             animes=animes,
         )
@@ -132,11 +134,7 @@ class JKAnimeScraper(BaseScraper):
             async with await browser.new_page() as page:
                 return await self._get_anime_info_with_episodes(page, url, anime_id)
 
-        try:
-            html_text = await self.http.get(anime_id)
-        except ConnectionError as e:
-            raise ScraperTimeoutError(str(e)) from e
-
+        html_text = await self.http.get(anime_id)
         return self.parser.parse_anime_info(html_text, anime_id)
 
     async def _get_anime_info_with_episodes(
