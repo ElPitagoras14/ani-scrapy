@@ -14,11 +14,9 @@ if sys.platform == "win32":
 import asyncio
 import platform
 import subprocess
-import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import aiohttp
 from rich import print as rprint
@@ -32,7 +30,7 @@ class DiagnosticResult:
     name: str
     status: str  # "pass", "warn", "fail"
     message: str = ""
-    details: Dict = field(default_factory=dict)
+    details: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -40,12 +38,12 @@ class DoctorReport:
     """Complete doctor report."""
 
     timestamp: str
-    environment: Dict
-    results: List[DiagnosticResult]
+    environment: dict
+    results: list[DiagnosticResult]
     exit_code: int
     summary: str
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "timestamp": self.timestamp,
             "environment": self.environment,
@@ -98,7 +96,7 @@ class AniScrapyDoctor:
 
     def __init__(self, timeout: int = 5):
         self.timeout = timeout
-        self.results: List[DiagnosticResult] = []
+        self.results: list[DiagnosticResult] = []
 
     def run(self) -> DoctorReport:
         """Run all diagnostic checks."""
@@ -124,7 +122,7 @@ class AniScrapyDoctor:
         name: str,
         status: str,
         message: str,
-        details: Optional[Dict] = None,
+        details: dict | None = None,
     ) -> None:
         """Add a diagnostic result."""
         self.results.append(
@@ -137,7 +135,7 @@ class AniScrapyDoctor:
             )
         )
 
-    def _get_status_summary(self) -> Tuple[bool, bool]:
+    def _get_status_summary(self) -> tuple[bool, bool]:
         """Get summary of current results status."""
         has_fail = any(r.status == self.STATUS_FAIL for r in self.results)
         has_warn = any(r.status == self.STATUS_WARN for r in self.results)
@@ -173,18 +171,15 @@ class AniScrapyDoctor:
             if platform.system() == "Windows":
                 output = subprocess.check_output(
                     [
-                        "wmic",
-                        "OS",
-                        "Get",
-                        "TotalVisibleMemorySize",
-                        "/Value",
+                        "powershell",
+                        "-NoProfile",
+                        "-Command",
+                        "(Get-CimInstance Win32_OperatingSystem).TotalVisibleMemorySize",
                     ],
                     text=True,
                 )
-                for line in output.splitlines():
-                    if "TotalVisibleMemorySize" in line:
-                        kb = int(line.split("=")[1])
-                        return f"{kb // (1024 * 1024)}GB"
+                kb = int(output.strip())
+                return f"{kb // (1024 * 1024)}GB"
             else:
                 output = subprocess.check_output(["free", "-m"], text=True)
                 lines = output.split("\n")
@@ -308,7 +303,7 @@ class AniScrapyDoctor:
                         details={"url": url, "error": str(e)[:50]},
                     )
 
-    def _get_environment_info(self) -> Dict:
+    def _get_environment_info(self) -> dict:
         """Get environment information."""
         return {
             "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
@@ -334,7 +329,7 @@ class AniScrapyDoctor:
         warn_count = sum(1 for r in self.results if r.status == self.STATUS_WARN)
 
         if not has_fail and not has_warn:
-            return "No issues found. Star Brave for better success rates!"
+            return "No issues found. Use Brave for better success rates!"
         elif has_fail:
             return f"{fail_count} issue(s) found."
         else:
@@ -363,11 +358,11 @@ class AniScrapyDoctor:
         else:
             icon = "⚠️ "
 
-        print(f"{icon}  {summary}")
+        print(f"{icon} {summary}")
 
-    def _print_by_category(self, results: List[DiagnosticResult]) -> None:
+    def _print_by_category(self, results: list[DiagnosticResult]) -> None:
         """Print results grouped by category."""
-        categories: Dict[str, List[DiagnosticResult]] = {}
+        categories: dict[str, list[DiagnosticResult]] = {}
         for result in results:
             if result.category not in categories:
                 categories[result.category] = []
@@ -376,7 +371,7 @@ class AniScrapyDoctor:
         for category, cat_results in categories.items():
             self._print_category(category, cat_results)
 
-    def _print_category(self, category: str, results: List[DiagnosticResult]) -> None:
+    def _print_category(self, category: str, results: list[DiagnosticResult]) -> None:
         """Print a category section."""
         statuses = [r.status for r in results]
         category_icon = self._get_category_icon(statuses)
@@ -392,7 +387,7 @@ class AniScrapyDoctor:
             else:
                 rprint(f"  - {prefix}{r.name}: {r.message}")
 
-    def _get_category_icon(self, statuses: List[str]) -> str:
+    def _get_category_icon(self, statuses: list[str]) -> str:
         """Get icon for a category based on its statuses."""
         if all(s == self.STATUS_PASS for s in statuses):
             return "✅"

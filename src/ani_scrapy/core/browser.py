@@ -13,11 +13,11 @@ class AsyncBrowser:
         self,
         headless: bool = True,
         executable_path: str | None = None,
-        args: list[str] = [],
+        args: list[str] | None = None,
     ):
         self.headless = headless
         self.executable_path = executable_path
-        self.args = args
+        self.args = list(args) if args else []
         self.playwright = None
         self.browser = None
         self._playwright_cm = None

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from ani_scrapy.core.browser import AsyncBrowser
 from ani_scrapy.core.schemas import (
@@ -17,13 +16,13 @@ class BaseScraper(ABC):
     def __init__(
         self,
         headless: bool = True,
-        executable_path: str = "",
-        external_browser: Optional[AsyncBrowser] = None,
+        executable_path: str | None = None,
+        external_browser: AsyncBrowser | None = None,
     ) -> None:
         self.headless = headless
         self.executable_path = executable_path
         self._external_browser = external_browser
-        self._browser: Optional[AsyncBrowser] = None
+        self._browser: AsyncBrowser | None = None
 
     async def __aenter__(self):
         return self
@@ -39,9 +38,7 @@ class BaseScraper(ABC):
         if self._browser is None:
             self._browser = AsyncBrowser(
                 headless=self.headless,
-                executable_path=(
-                    self.executable_path if self.executable_path else None
-                ),
+                executable_path=self.executable_path,
             )
             await self._browser.__aenter__()
         return self._browser
@@ -54,9 +51,7 @@ class BaseScraper(ABC):
         if self._browser is None:
             self._browser = AsyncBrowser(
                 headless=self.headless,
-                executable_path=(
-                    self.executable_path if self.executable_path else None
-                ),
+                executable_path=self.executable_path,
             )
             await self._browser.__aenter__()
 

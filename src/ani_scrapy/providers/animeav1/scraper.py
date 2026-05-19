@@ -1,7 +1,6 @@
 """AnimeAV1 scraper."""
 
 from datetime import datetime
-from typing import Optional
 
 from ani_scrapy.core.log import logger
 
@@ -25,8 +24,8 @@ class AnimeAV1Scraper(BaseScraper):
     def __init__(
         self,
         headless: bool = True,
-        executable_path: str = "",
-        external_browser: Optional[AsyncBrowser] = None,
+        executable_path: str | None = None,
+        external_browser: AsyncBrowser | None = None,
     ):
         super().__init__(
             headless=headless,
