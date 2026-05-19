@@ -168,7 +168,8 @@ class AniScrapyDoctor:
     def _get_system_ram(self) -> str:
         """Get system RAM information."""
         try:
-            if platform.system() == "Windows":
+            system = platform.system()
+            if system == "Windows":
                 output = subprocess.check_output(
                     [
                         "powershell",
@@ -180,7 +181,12 @@ class AniScrapyDoctor:
                 )
                 kb = int(output.strip())
                 return f"{kb // (1024 * 1024)}GB"
-            else:
+            elif system == "Darwin":
+                output = subprocess.check_output(
+                    ["sysctl", "-n", "hw.memsize"], text=True
+                )
+                return f"{int(output.strip()) // (1024 ** 3)}GB"
+            elif system == "Linux":
                 output = subprocess.check_output(["free", "-m"], text=True)
                 lines = output.split("\n")
                 if lines and len(lines) > 1:
