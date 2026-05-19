@@ -2,7 +2,6 @@
 
 import json
 from bs4 import BeautifulSoup
-from typing import List
 
 from ani_scrapy.core.schemas import (
     SearchAnimeInfo,
@@ -23,7 +22,7 @@ class AnimeFLVParser:
     """Parsing logic for AnimeFLV."""
 
     @staticmethod
-    def parse_search_results(html: str) -> List[SearchAnimeInfo]:
+    def parse_search_results(html: str) -> list[SearchAnimeInfo]:
         """Parse search results from HTML."""
         soup = BeautifulSoup(html, "lxml")
         results = []

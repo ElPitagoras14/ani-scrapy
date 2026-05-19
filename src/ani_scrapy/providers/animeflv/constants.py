@@ -3,7 +3,6 @@ from ani_scrapy.core.schemas import AnimeType, RelatedType
 BASE_URL = "https://www4.animeflv.net"
 SEARCH_ENDPOINT = "browse"
 ANIME_VIDEO_ENDPOINT = "ver"
-ANIME_ENDPOINT = "anime"
 BASE_EPISODE_IMG_URL = "https://cdn.animeflv.net/screenshots"
 SW_DOWNLOAD_URL = "https://hgplaycdn.com/f"
 

@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from bs4 import BeautifulSoup
-from typing import List
 
 from ani_scrapy.core.exceptions import ScraperParseError
 from ani_scrapy.core.schemas import (
@@ -19,7 +18,7 @@ class JKAnimeParser:
     """Parsing logic for JKAnime."""
 
     @staticmethod
-    def parse_search_results(html: str) -> List[SearchAnimeInfo]:
+    def parse_search_results(html: str) -> list[SearchAnimeInfo]:
         """Parse search results from HTML."""
         soup = BeautifulSoup(html, "lxml")
         results = []
@@ -160,7 +159,7 @@ class JKAnimeParser:
         )
 
     @staticmethod
-    def parse_episode_page(html: str, anime_id: str) -> List[EpisodeInfo]:
+    def parse_episode_page(html: str, anime_id: str) -> list[EpisodeInfo]:
         """Parse episode page HTML and extract episodes."""
         soup = BeautifulSoup(html, "lxml")
         episodes = []
@@ -204,7 +203,7 @@ class JKAnimeParser:
         return ANIME_TYPE_MAP.get(site_type, AnimeType.TV)
 
     @staticmethod
-    def parse_table_download_links(html: str, episode_number: int) -> List[dict]:
+    def parse_table_download_links(html: str, episode_number: int) -> list[dict]:
         """Parse table download links."""
         soup = BeautifulSoup(html, "lxml")
         download_container = soup.select_one("div.download.mt-2")

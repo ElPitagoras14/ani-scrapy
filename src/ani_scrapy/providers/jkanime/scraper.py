@@ -2,7 +2,6 @@
 
 import asyncio
 import time
-from typing import Optional
 from urllib.parse import quote
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
@@ -37,8 +36,8 @@ class JKAnimeScraper(BaseScraper):
     def __init__(
         self,
         headless: bool = True,
-        executable_path: str = "",
-        external_browser: Optional[AsyncBrowser] = None,
+        executable_path: str | None = None,
+        external_browser: AsyncBrowser | None = None,
     ):
         super().__init__(
             headless=headless,
