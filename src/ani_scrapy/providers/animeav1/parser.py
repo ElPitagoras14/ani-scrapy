@@ -10,8 +10,8 @@ from ani_scrapy.core.schemas import (
     EpisodeInfo,
     RelatedInfo,
     DownloadLinkInfo,
-    _AnimeType,
-    _RelatedType,
+    AnimeType,
+    RelatedType,
 )
 from ani_scrapy.providers.animeav1.constants import (
     ANIME_TYPE_MAP,
@@ -48,7 +48,7 @@ class AnimeAV1Parser:
 
                 type_element = article.select_one("div.rounded.bg-line")
                 type_text = type_element.text.strip() if type_element else "TV Anime"
-                anime_type = ANIME_TYPE_MAP.get(type_text, _AnimeType.TV)
+                anime_type = ANIME_TYPE_MAP.get(type_text, AnimeType.TV)
 
                 if anime_id and title:
                     results.append(
@@ -96,7 +96,7 @@ class AnimeAV1Parser:
             return AnimeInfo(
                 id=anime_id,
                 title="",
-                type=_AnimeType.TV,
+                type=AnimeType.TV,
                 poster="",
                 description="",
                 is_finished=False,
@@ -106,7 +106,7 @@ class AnimeAV1Parser:
         title = media_data.get("title", "")
         synopsis = media_data.get("synopsis", "")
         category_name = media_data.get("category", {}).get("name", "TV Anime")
-        anime_type = ANIME_TYPE_MAP.get(category_name, _AnimeType.TV)
+        anime_type = ANIME_TYPE_MAP.get(category_name, AnimeType.TV)
 
         # Poster from HTML
         img = soup.select_one("div.relative img.aspect-poster")
@@ -121,7 +121,7 @@ class AnimeAV1Parser:
         genres = [g.get("name", "") for g in media_data.get("genres", [])]
 
         # Episodes
-        episodes: list[EpisodeInfo | None] = []
+        episodes: list[EpisodeInfo] = []
         media_id = media_data.get("id", "")
         if include_episodes:
             episodes_data = media_data.get("episodes", [])
@@ -130,14 +130,14 @@ class AnimeAV1Parser:
                 image_preview = f"{ANIME_COVER_URL}/covers/{media_id}/{ep_number}.jpg"
                 episodes.append(
                     EpisodeInfo(
-                        number=ep_number,
+                        episode_number=ep_number,
                         anime_id=anime_id,
                         image_preview=image_preview,
                     )
                 )
 
         # Related animes
-        related: list[RelatedInfo | None] = []
+        related: list[RelatedInfo] = []
         relations_data = media_data.get("relations", [])
         for rel in relations_data:
             rel_type = rel.get("type", 1)
@@ -146,7 +146,7 @@ class AnimeAV1Parser:
                 RelatedInfo(
                     id=dest.get("slug", ""),
                     title=dest.get("title", ""),
-                    type=RELATED_TYPE_MAP.get(rel_type, _RelatedType.PARALLEL_HISTORY),
+                    type=RELATED_TYPE_MAP.get(rel_type, RelatedType.PARALLEL_HISTORY),
                 )
             )
 

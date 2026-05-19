@@ -17,8 +17,8 @@ from ani_scrapy.core.schemas import (
     DownloadLinkInfo,
     PagedSearchAnimeInfo,
     RelatedInfo,
-    _AnimeType,
-    _RelatedType,
+    AnimeType,
+    RelatedType,
 )
 
 __all__ = [
@@ -36,6 +36,6 @@ __all__ = [
     "DownloadLinkInfo",
     "PagedSearchAnimeInfo",
     "RelatedInfo",
-    "_AnimeType",
-    "_RelatedType",
+    "AnimeType",
+    "RelatedType",
 ]

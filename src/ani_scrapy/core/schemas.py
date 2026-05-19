@@ -3,14 +3,14 @@ from enum import Enum
 from datetime import datetime
 
 
-class _AnimeType(Enum):
+class AnimeType(Enum):
     TV = "TV"
     MOVIE = "Movie"
     OVA = "OVA"
     SPECIAL = "Special"
 
 
-class _RelatedType(Enum):
+class RelatedType(Enum):
     PREQUEL = "Prequel"
     SEQUEL = "Sequel"
     PARALLEL_HISTORY = "Parallel History"
@@ -21,7 +21,7 @@ class _RelatedType(Enum):
 class BaseAnimeInfo:
     id: str
     title: str
-    type: _AnimeType
+    type: AnimeType
     poster: str
 
 
@@ -41,12 +41,12 @@ class PagedSearchAnimeInfo:
 class RelatedInfo:
     id: str
     title: str
-    type: _RelatedType
+    type: RelatedType
 
 
 @dataclass
 class EpisodeInfo:
-    number: int
+    episode_number: int
     anime_id: str
     image_preview: str | None = None
 
@@ -56,9 +56,9 @@ class AnimeInfo(BaseAnimeInfo):
     description: str
     is_finished: bool
     genres: list[str] = field(default_factory=list)
-    related_info: list[RelatedInfo | None] = field(default_factory=list)
+    related_info: list[RelatedInfo] = field(default_factory=list)
     next_episode_date: datetime | None = None
-    episodes: list[EpisodeInfo | None] = field(default_factory=list)
+    episodes: list[EpisodeInfo] = field(default_factory=list)
 
 
 @dataclass

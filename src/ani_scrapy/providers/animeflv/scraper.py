@@ -117,15 +117,17 @@ class AnimeFLVScraper(BaseScraper):
         anime_thumb_id = info_ids[0]
         episodes = []
 
-        for episode_number, _ in episodes_data:
-            number = int(episode_number)
-            if number <= last_episode_number:
+        for raw_episode_number, _ in episodes_data:
+            episode_number = int(raw_episode_number)
+            if episode_number <= last_episode_number:
                 break
 
-            image_prev = f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{number}/th_3.jpg"
+            image_prev = (
+                f"{BASE_EPISODE_IMG_URL}/{anime_thumb_id}/{episode_number}/th_3.jpg"
+            )
             episodes.append(
                 EpisodeInfo(
-                    number=number,
+                    episode_number=episode_number,
                     anime_id=anime_id,
                     image_preview=image_prev,
                 )
