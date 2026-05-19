@@ -77,6 +77,16 @@ class BaseScraper(ABC):
             self._browser = None
         self._external_browser = None
 
+    @staticmethod
+    def _validate_page(page: int) -> None:
+        if page < 1:
+            raise ValueError("'page' must be greater than 0")
+
+    @staticmethod
+    def _validate_episode_number(episode_number: int) -> None:
+        if episode_number < 0:
+            raise ValueError("'episode_number' must be greater than or equal to 0")
+
     @abstractmethod
     async def search_anime(
         self,

@@ -67,8 +67,7 @@ class AnimeFLVScraper(BaseScraper):
 
         logger.info("Searching anime | query={query}", query=query)
 
-        if page < 1:
-            raise ValueError("The variable 'page' must be greater than 0")
+        self._validate_page(page)
 
         html = await self.http.get("browse", params={"q": query, "page": page})
         animes = self.parser.parse_search_results(html)
@@ -149,10 +148,7 @@ class AnimeFLVScraper(BaseScraper):
             episode_number=episode_number,
         )
 
-        if episode_number < 0:
-            raise ValueError(
-                "The variable 'episode_number' must be greater than " + "or equal to 0"
-            )
+        self._validate_episode_number(episode_number)
 
         url = f"{ANIME_VIDEO_ENDPOINT}/{anime_id}-{episode_number}"
         html = await self.http.get(url)
@@ -183,6 +179,8 @@ class AnimeFLVScraper(BaseScraper):
             anime_id=anime_id,
             episode_number=episode_number,
         )
+
+        self._validate_episode_number(episode_number)
 
         url = f"{BASE_URL}/{ANIME_VIDEO_ENDPOINT}/{anime_id}-{episode_number}"
 

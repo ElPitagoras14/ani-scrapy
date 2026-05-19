@@ -23,7 +23,8 @@ from ani_scrapy.providers.animeav1.constants import (
 class AnimeAV1Parser:
     """Parser for AnimeAV1."""
 
-    def parse_search_results(self, html: str) -> list[SearchAnimeInfo]:
+    @staticmethod
+    def parse_search_results(html: str) -> list[SearchAnimeInfo]:
         """Parse search results from HTML."""
         soup = BeautifulSoup(html, "lxml")
         results = []
@@ -65,7 +66,8 @@ class AnimeAV1Parser:
 
         return results
 
-    def parse_total_pages(self, html: str) -> int:
+    @staticmethod
+    def parse_total_pages(html: str) -> int:
         """Parse total pages from pagination HTML."""
         soup = BeautifulSoup(html, "lxml")
 
@@ -84,14 +86,15 @@ class AnimeAV1Parser:
 
         return 1
 
+    @staticmethod
     def parse_anime_info(
-        self, html: str, anime_id: str, include_episodes: bool = True
+        html: str, anime_id: str, include_episodes: bool = True
     ) -> AnimeInfo:
         """Parse anime info from HTML."""
         soup = BeautifulSoup(html, "lxml")
 
         # Extract media data from script
-        media_data = self._extract_media_data(html)
+        media_data = AnimeAV1Parser._extract_media_data(html)
         if not media_data:
             return AnimeInfo(
                 id=anime_id,
@@ -151,7 +154,7 @@ class AnimeAV1Parser:
             )
 
         # Is finished - parse from HTML body div
-        is_finished = self._parse_finished_status_from_html(html)
+        is_finished = AnimeAV1Parser._parse_finished_status_from_html(html)
 
         return AnimeInfo(
             id=anime_id,
@@ -165,7 +168,8 @@ class AnimeAV1Parser:
             episodes=episodes,
         )
 
-    def _extract_media_data(self, html: str) -> dict | None:
+    @staticmethod
+    def _extract_media_data(html: str) -> dict | None:
         """Extract media data from script tag."""
         soup = BeautifulSoup(html, "lxml")
 
@@ -174,11 +178,12 @@ class AnimeAV1Parser:
             content = str(script)
             if "__sveltekit_" in content and "media:" in content:
                 script_content = content[8:-9]  # Remove <script> and </script>
-                return self._parse_media_script(script_content)
+                return AnimeAV1Parser._parse_media_script(script_content)
 
         return None
 
-    def _parse_media_script(self, script_content: str) -> dict | None:
+    @staticmethod
+    def _parse_media_script(script_content: str) -> dict | None:
         """Parse media data from script content."""
         # Find media: in this script
         media_pos = script_content.find("media:")
@@ -291,7 +296,8 @@ class AnimeAV1Parser:
 
         return result
 
-    def _parse_finished_status_from_html(self, html: str) -> bool:
+    @staticmethod
+    def _parse_finished_status_from_html(html: str) -> bool:
         """Parse is_finished from HTML body div."""
         soup = BeautifulSoup(html, "lxml")
 
@@ -315,7 +321,8 @@ class AnimeAV1Parser:
 
         return False
 
-    def parse_episode_page(self, html: str, anime_id: str) -> list[DownloadLinkInfo]:
+    @staticmethod
+    def parse_episode_page(html: str, anime_id: str) -> list[DownloadLinkInfo]:
         """Parse episode page from HTML and extract download links."""
         download_links: list[DownloadLinkInfo] = []
 
@@ -326,12 +333,13 @@ class AnimeAV1Parser:
             content = str(script)
             if "__sveltekit_" in content and "downloads:" in content:
                 script_content = content[8:-9]  # Remove <script> and </script>
-                download_links = self._parse_downloads_from_script(script_content)
+                download_links = AnimeAV1Parser._parse_downloads_from_script(script_content)
                 break
 
         return download_links
 
-    def parse_episode_embeds(self, html: str) -> list[DownloadLinkInfo]:
+    @staticmethod
+    def parse_episode_embeds(html: str) -> list[DownloadLinkInfo]:
         """Parse episode page from HTML and extract iframe/embed links."""
         embed_links: list[DownloadLinkInfo] = []
 
@@ -342,13 +350,14 @@ class AnimeAV1Parser:
             content = str(script)
             if "__sveltekit_" in content and "embeds:" in content:
                 script_content = content[8:-9]  # Remove <script> and </script>
-                embed_links = self._parse_embeds_from_script(script_content)
+                embed_links = AnimeAV1Parser._parse_embeds_from_script(script_content)
                 break
 
         return embed_links
 
+    @staticmethod
     def _parse_downloads_from_script(
-        self, script_content: str
+        script_content: str,
     ) -> list[DownloadLinkInfo]:
         """Parse downloads from script content."""
         download_links: list[DownloadLinkInfo] = []
@@ -404,7 +413,8 @@ class AnimeAV1Parser:
 
         return download_links
 
-    def _parse_embeds_from_script(self, script_content: str) -> list[DownloadLinkInfo]:
+    @staticmethod
+    def _parse_embeds_from_script(script_content: str) -> list[DownloadLinkInfo]:
         """Parse embeds from script content."""
         embed_links: list[DownloadLinkInfo] = []
 
@@ -458,7 +468,8 @@ class AnimeAV1Parser:
 
         return embed_links
 
-    def parse_schedule(self, html: str) -> dict[str, datetime]:
+    @staticmethod
+    def parse_schedule(html: str) -> dict[str, datetime]:
         """Parse schedule from /horario page."""
         schedule: dict[str, datetime] = {}
 
