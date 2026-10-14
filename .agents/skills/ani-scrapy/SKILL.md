@@ -5,7 +5,7 @@ description: "Use when writing Python code that scrapes anime sites with the ani
 
 # ani-scrapy
 
-A Python **async-first** library for scraping anime sites (AnimeFLV, JKAnime, AnimeAV1) with a unified API across providers. Some operations are HTTP-only; others need a Playwright-controlled browser. The library handles browser lifecycle for you — your job is to pick the right pattern and close resources.
+A Python **async-first** library for scraping anime sites (AnimeFLV, JKAnime, AnimeAV1) with a unified API across providers. **AnimeFLV is deprecated:** the site moved to `https://animeflv.or.at/` with a different HTML structure, so `AnimeFLVScraper` no longer works and emits a `DeprecationWarning` on creation; prefer JKAnime or AnimeAV1. Some operations are HTTP-only; others need a Playwright-controlled browser. The library handles browser lifecycle for you — your job is to pick the right pattern and close resources.
 
 ## Installation
 
@@ -30,7 +30,8 @@ from ani_scrapy import (
     AnimeType, RelatedType,
 )
 from ani_scrapy import (
-    ScraperError, ScraperBlockedError, ScraperParseError, ScraperTimeoutError,
+    ScraperError, ScraperBlockedError, ScraperHTTPError, ScraperNotFoundError,
+    ScraperParseError, ScraperTimeoutError,
 )
 ```
 
@@ -220,19 +221,37 @@ RelatedType:       PREQUEL | SEQUEL | PARALLEL_HISTORY | MAIN_HISTORY
 
 `include_episodes=False` on `get_anime_info` skips the per-episode listing — useful when you only need metadata. On JKAnime this also avoids opening the browser entirely (the metadata page is HTTP, the episode list is JS-rendered).
 
+`AnimeAV1Scraper` caches the `/horario` schedule it uses to fill `next_episode_date`. By default the cache never expires; for long-lived instances pass `schedule_cache_ttl` (seconds) so the dates are refetched:
+
+```python
+scraper = AnimeAV1Scraper(schedule_cache_ttl=3600)
+```
+
 ## Error handling
 
-Hierarchy: `ScraperError` is the base; everything else inherits from it. Catch the specific ones if you have a sensible recovery, otherwise catch `ScraperError`.
+Hierarchy: `ScraperError` is the base; `ScraperNotFoundError`, `ScraperBlockedError`, `ScraperHTTPError`, `ScraperTimeoutError` and `ScraperParseError` are its direct children (siblings, not nested). Every exception has `status_code` (`int | None`), set when the error comes from an HTTP response. Catch the specific ones if you have a sensible recovery, otherwise catch `ScraperError`.
+
+| Condition | Exception |
+|---|---|
+| HTTP 404 / 410 | `ScraperNotFoundError` |
+| HTTP 403 / 429 | `ScraperBlockedError` |
+| Other HTTP error status or connection failure | `ScraperHTTPError` (`status_code` is `None` without a response) |
+| Request timed out | `ScraperTimeoutError` |
+| Unexpected HTML or missing data (e.g. AnimeAV1 page without media data) | `ScraperParseError` |
 
 ```python
 from ani_scrapy import (
-    ScraperError, ScraperTimeoutError, ScraperParseError, ScraperBlockedError,
+    ScraperError, ScraperBlockedError, ScraperHTTPError, ScraperNotFoundError,
+    ScraperParseError, ScraperTimeoutError,
 )
 
 try:
     info = await scraper.get_anime_info(anime_id)
-except ScraperTimeoutError:
-    # transient — retry with backoff
+except ScraperNotFoundError:
+    # the anime does not exist — do not retry
+    ...
+except (ScraperTimeoutError, ScraperHTTPError) as e:
+    # transient — retry with backoff (e.status_code tells 5xx apart)
     ...
 except ScraperBlockedError:
     # bot detection — switch to Brave, slow down, or back off
@@ -249,12 +268,12 @@ except ScraperError as e:
 
 ### Retry guidance
 
-`ScraperTimeoutError` and `ScraperBlockedError` are transient; `ScraperParseError` is not (the site changed; fix the parser). Use exponential backoff for the transient ones — don't hammer a site that just blocked you.
+`ScraperTimeoutError`, `ScraperHTTPError` and `ScraperBlockedError` are transient; `ScraperNotFoundError` and `ScraperParseError` are not (the site changed; fix the parser). Use exponential backoff for the transient ones — don't hammer a site that just blocked you.
 
 ```python
 import asyncio
 import functools
-from ani_scrapy import ScraperTimeoutError, ScraperBlockedError
+from ani_scrapy import ScraperBlockedError, ScraperHTTPError, ScraperTimeoutError
 
 def with_retry(max_retries=3, base_delay=2):
     def deco(fn):
@@ -263,7 +282,7 @@ def with_retry(max_retries=3, base_delay=2):
             for attempt in range(max_retries):
                 try:
                     return await fn(*a, **kw)
-                except (ScraperTimeoutError, ScraperBlockedError):
+                except (ScraperTimeoutError, ScraperHTTPError, ScraperBlockedError):
                     if attempt == max_retries - 1:
                         raise
                     await asyncio.sleep(base_delay * (2 ** attempt))
@@ -294,7 +313,7 @@ ani-scrapy doctor --output json       # for CI
 ani-scrapy doctor --timeout 10        # slower networks
 ```
 
-It checks Python version, Playwright + Chromium install, Brave presence, and site reachability for all three providers. Exit codes: `0` ok, `1` warnings, `2` errors.
+It checks Python version, Playwright + Chromium install, Brave presence, and site reachability for the supported providers (JKAnime and AnimeAV1). Exit codes: `0` ok, `1` warnings, `2` errors.
 
 ## End-to-end: search → info → download URL
 
@@ -331,6 +350,6 @@ print(asyncio.run(fetch_download_url("gachiakuta", episode=24)))
 - **Opening a new scraper per anime in a loop.** Re-launches the browser every iteration. Open one `async with`, reuse the scraper across calls and across `asyncio.gather`.
 - **Forgetting to filter by `SUPPORTED_SERVERS`.** `get_file_download_link()` returns `None` for unsupported servers — looks like a bug, isn't one. Filter first.
 - **Calling `get_anime_info` with `include_episodes=True` on JKAnime when you only need metadata.** It opens the browser unnecessarily. Pass `include_episodes=False`.
-- **Catching `Exception` broadly.** Mask retryable errors. Catch `ScraperTimeoutError` / `ScraperBlockedError` specifically and only fall back to `ScraperError` for the catch-all.
+- **Catching `Exception` broadly.** Mask retryable errors. Catch `ScraperNotFoundError` / `ScraperTimeoutError` / `ScraperHTTPError` / `ScraperBlockedError` specifically and only fall back to `ScraperError` for the catch-all.
 - **Assuming pagination.** Only AnimeAV1 returns real `total_pages`. For AnimeFLV/JKAnime, you'll always see `total_pages == 1`.
 - **Running without `playwright install chromium`** the first time — only matters for browser-backed methods, but the failure is opaque. Run `ani-scrapy doctor` if something seems off.

@@ -1,5 +1,6 @@
 """AnimeAV1 scraper."""
 
+import time
 from datetime import datetime
 
 from ani_scrapy.core.log import logger
@@ -26,7 +27,16 @@ class AnimeAV1Scraper(BaseScraper):
         headless: bool = True,
         executable_path: str | None = None,
         external_browser: AsyncBrowser | None = None,
+        schedule_cache_ttl: float | None = None,
     ):
+        """AnimeAV1 scraper.
+
+        Args:
+            headless: Run the browser without a visible window.
+            executable_path: Path to a custom browser executable.
+            external_browser: Browser instance to reuse.
+            schedule_cache_ttl: Seconds the schedule is cached; None never expires.
+        """
         super().__init__(
             headless=headless,
             executable_path=executable_path,
@@ -35,6 +45,8 @@ class AnimeAV1Scraper(BaseScraper):
         self.http = AsyncHttpAdapter(base_url=BASE_URL)
         self.parser = AnimeAV1Parser()
         self._schedule_cache: dict[str, datetime] = {}
+        self._schedule_cache_ttl = schedule_cache_ttl
+        self._schedule_cached_at = 0.0
 
     async def search_anime(
         self,
@@ -82,16 +94,23 @@ class AnimeAV1Scraper(BaseScraper):
         logger.info("Anime info fetched")
         return anime_info
 
+    def _is_schedule_cache_expired(self) -> bool:
+        if self._schedule_cache_ttl is None:
+            return False
+        age = time.monotonic() - self._schedule_cached_at
+        return age >= self._schedule_cache_ttl
+
     async def _get_schedule(self) -> dict[str, datetime]:
         """Get schedule from /horario page."""
 
-        if self._schedule_cache:
+        if self._schedule_cache and not self._is_schedule_cache_expired():
             return self._schedule_cache
 
         try:
             html = await self.http.get("horario")
             schedule = self.parser.parse_schedule(html)
             self._schedule_cache = schedule
+            self._schedule_cached_at = time.monotonic()
             return schedule
         except Exception as e:
             logger.warning("Failed to get schedule | error={error}", error=str(e))

@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 from bs4 import BeautifulSoup
 
+from ani_scrapy.core.exceptions import ScraperParseError
 from ani_scrapy.core.schemas import (
     SearchAnimeInfo,
     AnimeInfo,
@@ -90,19 +91,19 @@ class AnimeAV1Parser:
     def parse_anime_info(
         html: str, anime_id: str, include_episodes: bool = True
     ) -> AnimeInfo:
-        """Parse anime info from HTML."""
+        """Parse anime info from HTML.
+
+        Raises:
+            ScraperParseError: If the page has no media data.
+        """
         soup = BeautifulSoup(html, "lxml")
 
         # Extract media data from script
         media_data = AnimeAV1Parser._extract_media_data(html)
         if not media_data:
-            return AnimeInfo(
-                id=anime_id,
-                title="",
-                type=AnimeType.TV,
-                poster="",
-                description="",
-                is_finished=False,
+            raise ScraperParseError(
+                f"No media data found for anime '{anime_id}'; possible layout "
+                "change, error page served with HTTP 200 or anti-bot challenge"
             )
 
         # Extract fields from media data

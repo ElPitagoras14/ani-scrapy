@@ -71,7 +71,7 @@ This checks:
 - Python version and platform
 - Playwright and Chromium available
 - Brave browser (recommended for sites with ads)
-- Network connectivity to supported sites (AnimeFLV, JKAnime, AnimeAV1)
+- Network connectivity to supported sites (JKAnime, AnimeAV1)
 
 ### Options
 
@@ -153,9 +153,9 @@ For complete documentation: [Docs index](./docs/index.md)
 
 ### Scraper Classes:
 
-- `AnimeFLVScraper` - Scraper for AnimeFLV
+- `AnimeFLVScraper` - Scraper for AnimeFLV (**deprecated**: the site moved to `https://animeflv.or.at/` with a different structure and the provider no longer works; it emits a `DeprecationWarning` and will be removed in a future version)
 - `JKAnimeScraper` - Scraper for JKAnime
-- `AnimeAV1Scraper` - Scraper for AnimeAV1
+- `AnimeAV1Scraper` - Scraper for AnimeAV1. `schedule_cache_ttl` (seconds, default `None` = never expires) controls how long the `/horario` schedule is cached
 
 ### Method Status Comparison
 
