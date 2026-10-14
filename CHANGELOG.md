@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.1
+
+### Fixed
+
+- **AnimeAV1 returns complete relations, genres and episodes.** The parser used fixed-size windows over the page data, so large franchises lost entries (for example `one-piece` returned 5 of 29 relations, `naruto-shippuuden` 5 of 14, and `psyren` 5 of 9 genres). The whole media object is now read structurally, so any number of entries is returned.
+- **AnimeAV1 titles with quotes are no longer cut.** A title such as `Kashita Maryoku wa "Revo Barai" de Kyousei Choushuu` used to end at the first escaped quote (`Kashita Maryoku wa \`). The same applies to related anime titles.
+- **AnimeAV1 synopses have real line breaks.** Line breaks used to appear as the literal characters `\n`; they are now real newlines. If your code removed or replaced those literal `\n` sequences, you can drop that step.
+- **AnimeAV1 raises `ScraperParseError` when the media data cannot be read** (the message includes the anime id) instead of returning partial data.
+
+The API is unchanged; consumers receive more and better data. Expect more relations and genres for large franchises and different text in synopses.
+
 ## 0.8.0
 
 ### Breaking changes
