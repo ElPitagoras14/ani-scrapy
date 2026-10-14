@@ -1,5 +1,6 @@
 """AnimeAV1 parser."""
 
+import json
 import re
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -19,6 +20,15 @@ from ani_scrapy.providers.animeav1.constants import (
     RELATED_TYPE_MAP,
     ANIME_COVER_URL,
 )
+
+STRING_PATTERN = r'"(?:[^"\\]+|\\.)*"'
+BRACE_OR_STRING_PATTERN = re.compile(STRING_PATTERN + r"|[{}]")
+MEDIA_KEY_PATTERN = re.compile(STRING_PATTERN + r"|([A-Za-z_$][\w$]*)(?=\s*:)")
+
+
+def _quote_key(match: re.Match) -> str:
+    key = match.group(1)
+    return f'"{key}"' if key else match.group()
 
 
 class AnimeAV1Parser:
@@ -94,12 +104,17 @@ class AnimeAV1Parser:
         """Parse anime info from HTML.
 
         Raises:
-            ScraperParseError: If the page has no media data.
+            ScraperParseError: If the page has no media data or it is invalid.
         """
         soup = BeautifulSoup(html, "lxml")
 
         # Extract media data from script
-        media_data = AnimeAV1Parser._extract_media_data(html)
+        try:
+            media_data = AnimeAV1Parser._extract_media_data(html)
+        except ScraperParseError as e:
+            raise ScraperParseError(
+                f"Invalid media data for anime '{anime_id}': {e}"
+            ) from e
         if not media_data:
             raise ScraperParseError(
                 f"No media data found for anime '{anime_id}'; possible layout "
@@ -109,7 +124,7 @@ class AnimeAV1Parser:
         # Extract fields from media data
         title = media_data.get("title", "")
         synopsis = media_data.get("synopsis", "")
-        category_name = media_data.get("category", {}).get("name", "TV Anime")
+        category_name = (media_data.get("category") or {}).get("name", "TV Anime")
         anime_type = ANIME_TYPE_MAP.get(category_name, AnimeType.TV)
 
         # Poster from HTML
@@ -122,13 +137,13 @@ class AnimeAV1Parser:
             poster = f"{ANIME_COVER_URL}/covers/{media_id}.jpg"
 
         # Genres
-        genres = [g.get("name", "") for g in media_data.get("genres", [])]
+        genres = [g.get("name", "") for g in media_data.get("genres") or []]
 
         # Episodes
         episodes: list[EpisodeInfo] = []
         media_id = media_data.get("id", "")
         if include_episodes:
-            episodes_data = media_data.get("episodes", [])
+            episodes_data = media_data.get("episodes") or []
             for ep in episodes_data:
                 ep_number = ep.get("number", 0)
                 image_preview = f"{ANIME_COVER_URL}/covers/{media_id}/{ep_number}.jpg"
@@ -142,10 +157,10 @@ class AnimeAV1Parser:
 
         # Related animes
         related: list[RelatedInfo] = []
-        relations_data = media_data.get("relations", [])
+        relations_data = media_data.get("relations") or []
         for rel in relations_data:
             rel_type = rel.get("type", 1)
-            dest = rel.get("destination", {})
+            dest = rel.get("destination") or {}
             related.append(
                 RelatedInfo(
                     id=dest.get("slug", ""),
@@ -185,117 +200,40 @@ class AnimeAV1Parser:
 
     @staticmethod
     def _parse_media_script(script_content: str) -> dict | None:
-        """Parse media data from script content."""
-        # Find media: in this script
+        """Parse the media object from script content.
+
+        Raises:
+            ScraperParseError: If the media object is unterminated or invalid.
+        """
         media_pos = script_content.find("media:")
         if media_pos == -1:
             return None
 
-        # Find matching braces
-        depth = 0
-        i = media_pos + 6  # Skip 'media:'
-        obj_start = i
+        media_str = AnimeAV1Parser._extract_object(script_content, media_pos + 6)
+        if media_str is None:
+            raise ScraperParseError("Unterminated media object")
 
-        while i < len(script_content):
-            if script_content[i] == "{":
+        try:
+            return json.loads(MEDIA_KEY_PATTERN.sub(_quote_key, media_str))
+        except json.JSONDecodeError as e:
+            raise ScraperParseError(f"Invalid media object: {e}") from e
+
+    @staticmethod
+    def _extract_object(text: str, start: int) -> str | None:
+        """Return the first balanced {...} at or after start, skipping strings."""
+        depth = 0
+        obj_start = -1
+        for match in BRACE_OR_STRING_PATTERN.finditer(text, start):
+            token = match.group()
+            if token == "{":
+                if depth == 0:
+                    obj_start = match.start()
                 depth += 1
-            elif script_content[i] == "}":
+            elif token == "}" and depth > 0:
                 depth -= 1
                 if depth == 0:
-                    break
-            i += 1
-
-        media_str = script_content[obj_start : i + 1]
-
-        # Extract basic fields
-        result: dict = {}
-
-        # id
-        id_match = re.search(r"(?:id|\"id\"):\s*(\d+)", media_str)
-        if id_match:
-            result["id"] = int(id_match.group(1))
-
-        # title
-        title_match = re.search(r'title:\s*"([^"]+)"', media_str)
-        if title_match:
-            result["title"] = title_match.group(1)
-
-        # slug - find after synopsis
-        synopsis_pos = media_str.find("synopsis:")
-        if synopsis_pos != -1:
-            slug_pos = media_str.find("slug:", synopsis_pos)
-            if slug_pos != -1:
-                slug_match = re.search(
-                    r'slug:\s*"([^"]+)"', media_str[slug_pos : slug_pos + 30]
-                )
-                if slug_match:
-                    result["slug"] = slug_match.group(1)
-
-        # synopsis - handle escaped quotes
-        synopsis = ""
-        synopsis_pos = media_str.find("synopsis:")
-        if synopsis_pos != -1:
-            search_start = synopsis_pos + 9
-            # Skip whitespace and find opening quote
-            i = search_start
-            while i < len(media_str) and media_str[i] in " \t\n":
-                i += 1
-            if i < len(media_str) and media_str[i] == '"':
-                i += 1
-                quote_start = i
-                # Find unescaped closing quote
-                while i < len(media_str):
-                    if media_str[i] == "\\":
-                        i += 2
-                    elif media_str[i] == '"':
-                        synopsis = media_str[quote_start:i]
-                        break
-                    else:
-                        i += 1
-                # Unescape \" in synopsis
-                synopsis = synopsis.replace('\\"', '"')
-        result["synopsis"] = synopsis
-
-        # category
-        cat_match = re.search(r'category:\s*\{[^}]*name:\s*"([^"]+)"', media_str)
-        result["category"] = (
-            {"name": cat_match.group(1)} if cat_match else {"name": "TV Anime"}
-        )
-
-        # genres
-        if "genres:" in media_str:
-            genres_start = media_str.find("genres:")
-            genres_section = media_str[genres_start : genres_start + 300]
-            genres = re.findall(r'name:\s*"([^"]+)"', genres_section)
-            result["genres"] = [{"name": g} for g in genres]
-        else:
-            result["genres"] = []
-
-        # episodes
-        if "episodes:" in media_str:
-            episodes_start = media_str.find("episodes:")
-            episodes_section = media_str[episodes_start : episodes_start + 50000]
-            episodes = re.findall(r"number:\s*(\d+)", episodes_section)
-            result["episodes"] = [{"number": int(e)} for e in episodes]
-        else:
-            result["episodes"] = []
-
-        # relations
-        if "relations:" in media_str:
-            rels_start = media_str.find("relations:")
-            rels_section = media_str[rels_start : rels_start + 800]
-            rels = re.findall(
-                r'type:\s*(\d+).*?slug:\s*"([^"]+)"[^}]*title:\s*"([^"]+)"',
-                rels_section,
-            )
-            result["relations"] = [
-                {"type": int(r[0]), "destination": {"slug": r[1], "title": r[2]}}
-                for r in rels
-            ]
-        else:
-            result["relations"] = []
-
-        return result
+                    return text[obj_start : match.end()]
+        return None
 
     @staticmethod
     def _parse_finished_status_from_html(html: str) -> bool:
