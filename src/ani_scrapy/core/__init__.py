@@ -6,6 +6,8 @@ from ani_scrapy.core.http import AsyncHttpAdapter
 from ani_scrapy.core.exceptions import (
     ScraperError,
     ScraperBlockedError,
+    ScraperHTTPError,
+    ScraperNotFoundError,
     ScraperTimeoutError,
     ScraperParseError,
 )
@@ -27,6 +29,8 @@ __all__ = [
     "AsyncHttpAdapter",
     "ScraperError",
     "ScraperBlockedError",
+    "ScraperHTTPError",
+    "ScraperNotFoundError",
     "ScraperTimeoutError",
     "ScraperParseError",
     "AnimeInfo",

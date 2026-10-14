@@ -9,7 +9,7 @@ from ani_scrapy.core.log import logger
 
 from ani_scrapy.core.base import BaseScraper
 from ani_scrapy.core.browser import AsyncBrowser
-from ani_scrapy.core.http import AsyncHttpAdapter
+from ani_scrapy.core.http import AsyncHttpAdapter, raise_for_status_code
 from ani_scrapy.providers.jkanime.parser import JKAnimeParser
 from ani_scrapy.providers.jkanime.constants import (
     BASE_URL,
@@ -143,7 +143,9 @@ class JKAnimeScraper(BaseScraper):
 
         logger.debug("Fetching anime info page with Playwright")
 
-        await page.goto(url, wait_until="domcontentloaded")
+        response = await page.goto(url, wait_until="domcontentloaded")
+        if response is not None:
+            raise_for_status_code(response.status, url)
         await page.wait_for_selector("div.col-lg-2.picd")
 
         html_text = await page.content()

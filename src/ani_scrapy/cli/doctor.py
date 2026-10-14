@@ -89,7 +89,6 @@ class AniScrapyDoctor:
 
     # Sites to check connectivity
     CONNECTIVITY_SITES = {
-        "animeflv.net": "https://animeflv.net",
         "jkanime.net": "https://jkanime.net",
         "animeav1.com": "https://animeav1.com",
     }

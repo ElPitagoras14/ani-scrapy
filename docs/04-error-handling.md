@@ -6,10 +6,23 @@ ani-scrapy provides a structured exception hierarchy for handling different erro
 
 ```
 ScraperError (base)
+├── ScraperNotFoundError
+├── ScraperBlockedError
+├── ScraperHTTPError
 ├── ScraperTimeoutError
-├── ScraperParseError
-└── ScraperBlockedError
+└── ScraperParseError
 ```
+
+All exceptions are direct children of `ScraperError`; none inherits from another. Every exception has an optional `status_code` attribute (`int | None`) with the HTTP status when the error comes from a response, and `None` otherwise.
+
+| Condition                                   | Exception              | `status_code` |
+|---------------------------------------------|------------------------|---------------|
+| HTTP 404 or 410                             | ScraperNotFoundError   | 404 / 410     |
+| HTTP 403 or 429                             | ScraperBlockedError    | 403 / 429     |
+| Other HTTP error status (e.g. 500, 503)     | ScraperHTTPError       | the status    |
+| Connection failure without a response       | ScraperHTTPError       | `None`        |
+| Request timed out                           | ScraperTimeoutError    | `None`        |
+| Unexpected HTML or missing data             | ScraperParseError      | `None`        |
 
 ## Exception Types
 
@@ -26,9 +39,39 @@ except ScraperError as e:
     print(f"Scraping error: {e}")
 ```
 
+### ScraperNotFoundError
+
+The anime or episode does not exist (HTTP 404 or 410).
+
+```python
+from ani_scrapy import ScraperNotFoundError
+
+try:
+    info = await scraper.get_anime_info("anime-id")
+except ScraperNotFoundError as e:
+    print(f"Not found (HTTP {e.status_code})")
+```
+
+**Recommendation:** Do not retry; check the anime id.
+
+### ScraperHTTPError
+
+The site answered with an error status other than not found or blocked (for example 500 or 503), or the connection failed before any response (`status_code` is `None`).
+
+```python
+from ani_scrapy import ScraperHTTPError
+
+try:
+    info = await scraper.get_anime_info("anime-id")
+except ScraperHTTPError as e:
+    print(f"HTTP failure (status {e.status_code})")
+```
+
+**Recommendation:** Retry later; the site may be down.
+
 ### ScraperTimeoutError
 
-Request failed due to timeout. This is typically a transient error.
+Request failed due to timeout. This is typically a transient error. Other HTTP failures are reported as `ScraperHTTPError`.
 
 ```python
 from ani_scrapy import ScraperTimeoutError
@@ -44,9 +87,8 @@ except ScraperTimeoutError:
 
 **When it occurs:**
 
-- Network is slow or unreachable
 - Site is taking too long to respond
-- Browser failed to load page within timeout
+- Request exceeded the configured timeout
 
 **Recommendation:** Implement retry logic with exponential backoff.
 
@@ -69,6 +111,7 @@ except ScraperParseError as e:
 - Site HTML structure changed
 - Required CSS selectors no longer exist
 - API response format changed
+- AnimeAV1 page without media data (layout change, error page served with HTTP 200 or anti-bot challenge); this raises instead of returning an empty result
 
 **Recommendation:** Check if site structure changed and update parser if needed.
 
@@ -105,19 +148,24 @@ except ScraperBlockedError:
 ```python
 import asyncio
 from ani_scrapy import (
-    AnimeFLVScraper,
-    ScraperError,
-    ScraperTimeoutError,
-    ScraperParseError,
+    AnimeAV1Scraper,
     ScraperBlockedError,
+    ScraperError,
+    ScraperHTTPError,
+    ScraperNotFoundError,
+    ScraperParseError,
+    ScraperTimeoutError,
 )
 
 async def robust_scraping():
-    async with AnimeFLVScraper() as scraper:
+    async with AnimeAV1Scraper() as scraper:
         try:
             info = await scraper.get_anime_info("anime-id")
             return info
-        except ScraperTimeoutError:
+        except ScraperNotFoundError:
+            print("Anime does not exist")
+            return None
+        except (ScraperTimeoutError, ScraperHTTPError):
             print("Timeout - will retry")
             await asyncio.sleep(5)
             return await scraper.get_anime_info("anime-id")
@@ -137,7 +185,11 @@ async def robust_scraping():
 ```python
 import functools
 import asyncio
-from ani_scrapy import ScraperTimeoutError, ScraperBlockedError
+from ani_scrapy import (
+    ScraperBlockedError,
+    ScraperHTTPError,
+    ScraperTimeoutError,
+)
 
 def with_retry(max_retries=3, delay=2):
     def decorator(func):
@@ -147,7 +199,7 @@ def with_retry(max_retries=3, delay=2):
             for attempt in range(max_retries):
                 try:
                     return await func(*args, **kwargs)
-                except (ScraperTimeoutError, ScraperBlockedError) as e:
+                except (ScraperTimeoutError, ScraperHTTPError, ScraperBlockedError) as e:
                     last_exception = e
                     if attempt < max_retries - 1:
                         await asyncio.sleep(delay * (attempt + 1))
@@ -160,15 +212,18 @@ async def fetch_with_retry(scraper, anime_id):
     return await scraper.get_anime_info(anime_id)
 ```
 
-## Error Codes Reference
+## Recoverability
 
-| Exception              | Code | Recoverable |
-|------------------------|------|-------------|
-| ScraperTimeoutError    | 1    | Yes         |
-| ScraperParseError      | 2    | No*         |
-| ScraperBlockedError    | 3    | Yes         |
+| Exception              | Recoverable |
+|------------------------|-------------|
+| ScraperNotFoundError   | No          |
+| ScraperBlockedError    | Yes         |
+| ScraperHTTPError       | Yes*        |
+| ScraperTimeoutError    | Yes         |
+| ScraperParseError      | No**        |
 
-*ParseError may be recoverable if site structure is updated in the parser.
+*Retry only makes sense for 5xx and connection failures.
+**ParseError may be recoverable if site structure is updated in the parser.
 
 ## Logging Errors
 

@@ -6,8 +6,36 @@ import time
 import aiohttp
 
 from ani_scrapy.core.constants.general import CONTEXT_OPTIONS
-from ani_scrapy.core.exceptions import ScraperBlockedError, ScraperTimeoutError
+from ani_scrapy.core.exceptions import (
+    ScraperBlockedError,
+    ScraperHTTPError,
+    ScraperNotFoundError,
+    ScraperTimeoutError,
+)
 from ani_scrapy.core.log import logger
+
+NOT_FOUND_STATUSES = (404, 410)
+BLOCKED_STATUSES = (403, 429)
+
+
+def raise_for_status_code(status: int, url: str) -> None:
+    """Raise the matching scraper exception for an error HTTP status.
+
+    Args:
+        status: HTTP status code.
+        url: Requested URL, used in the error message.
+    """
+    if status < 400:
+        return
+    if status in NOT_FOUND_STATUSES:
+        raise ScraperNotFoundError(
+            f"Not found (HTTP {status}): {url}", status_code=status
+        )
+    if status in BLOCKED_STATUSES:
+        raise ScraperBlockedError(
+            f"Blocked by site (HTTP {status}): {url}", status_code=status
+        )
+    raise ScraperHTTPError(f"HTTP error {status}: {url}", status_code=status)
 
 
 class BaseHttpAdapter:
@@ -57,11 +85,7 @@ class AsyncHttpAdapter(BaseHttpAdapter):
         start = time.perf_counter()
         try:
             async with session.request(method, url, **kwargs) as response:
-                if response.status in (403, 429):
-                    raise ScraperBlockedError(
-                        f"Blocked by site (HTTP {response.status}): {url}"
-                    )
-                response.raise_for_status()
+                raise_for_status_code(response.status, url)
                 duration_ms = (time.perf_counter() - start) * 1000
                 logger.debug(
                     "HTTP {method} response | url={url} status_code={status_code} duration_ms={duration_ms}",
@@ -81,7 +105,10 @@ class AsyncHttpAdapter(BaseHttpAdapter):
                 url=url,
                 error=str(e),
             )
-            raise ScraperTimeoutError(f"HTTP request failed: {e}") from e
+            raise ScraperHTTPError(
+                f"HTTP request failed: {e}",
+                status_code=getattr(e, "status", None),
+            ) from e
 
     async def get(self, endpoint: str, params: dict | None = None) -> str:
         """Async GET request."""

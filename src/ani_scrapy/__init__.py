@@ -3,6 +3,8 @@ from ani_scrapy.core.browser import AsyncBrowser
 from ani_scrapy.core.exceptions import (
     ScraperBlockedError,
     ScraperError,
+    ScraperHTTPError,
+    ScraperNotFoundError,
     ScraperParseError,
     ScraperTimeoutError,
 )
@@ -39,6 +41,8 @@ __all__ = [
     "SearchAnimeInfo",
     "ScraperBlockedError",
     "ScraperError",
+    "ScraperHTTPError",
+    "ScraperNotFoundError",
     "ScraperParseError",
     "ScraperTimeoutError",
     "enable_logging",

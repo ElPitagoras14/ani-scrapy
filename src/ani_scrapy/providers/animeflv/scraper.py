@@ -1,6 +1,7 @@
 """AnimeFLV scraper."""
 
 import asyncio
+import warnings
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from ani_scrapy.core.log import logger
@@ -31,7 +32,11 @@ from ani_scrapy.core.schemas import (
 
 
 class AnimeFLVScraper(BaseScraper):
-    """AnimeFLV scraper."""
+    """AnimeFLV scraper.
+
+    Deprecated: the site moved to https://animeflv.or.at/ with a different
+    HTML structure and this provider no longer works.
+    """
 
     def __init__(
         self,
@@ -39,6 +44,13 @@ class AnimeFLVScraper(BaseScraper):
         executable_path: str | None = None,
         external_browser: AsyncBrowser | None = None,
     ):
+        warnings.warn(
+            "AnimeFLVScraper is deprecated: AnimeFLV moved to "
+            "https://animeflv.or.at/ with a different structure and this "
+            "provider no longer works.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(
             headless=headless,
             executable_path=executable_path,
