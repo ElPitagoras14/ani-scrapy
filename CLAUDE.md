@@ -3,13 +3,14 @@
 ## Setup
 
 - Use `uv` for packages and `.venv` to run scripts and tests
+- Run tools with `uv run --no-sync` (e.g. `uv run --no-sync pytest`): without `--no-sync`, uv uninstalls the package from `.venv` because `pyproject.toml` has no `[build-system]` yet
 
 ## Code Style
 
 - No conditional imports; absolute imports for package modules, relative for same directory
 - Type hints on function signatures (Python 3.10+); avoid `Any`
 - Prefer async/await; provide async context managers when appropriate
-- Errors: use the hierarchy `ScraperError` -> `ScraperTimeoutError`, `ScraperParseError`, `ScraperBlockedError`
+- Errors: use the hierarchy `ScraperError` -> `ScraperNotFoundError`, `ScraperBlockedError`, `ScraperHTTPError`, `ScraperTimeoutError`, `ScraperParseError`
 - Logging: use `loguru.logger`. The library never configures Loguru: never call `logger.remove()` or modify global handlers in library code
 - No comments unless explaining complex logic; concise docstrings (parameters and return values) on public functions and classes
 - CLI: `typer`, entry point `ani-scrapy` with subcommands (e.g. `ani-scrapy doctor`), `--help` on all commands
@@ -21,6 +22,13 @@
 - Parsing logic lives in parsers, network coordination in scrapers
 - Clarify the problem before proposing solutions; offer alternatives with brief trade-offs when a real decision exists
 - Suggest design patterns only when they add real value
+
+## Workflow
+
+- Changes users can notice update `CHANGELOG.md` and bump the version in the same PR
+- Public API changes also update the usage skill (`.claude/skills/ani-scrapy/SKILL.md`)
+- Merging to `main` publishes to PyPI; never tag or publish by hand
+- Provider fixes, new providers and releases: use the `ani-scrapy-dev` skill
 
 ## Git
 
