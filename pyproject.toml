@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ani-scrapy"
-version = "0.9.0"
+version = "0.9.1"
 description = "Async-first Python library for scraping anime websites. Supports some anime websites with unified interface, detailed metadata, and download links from multiple servers."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -2,6 +2,10 @@
 
 While the library is on 0.x, breaking changes bump the minor version and fixes bump the patch version. Releases before 0.8.0 are listed in [GitHub Releases](https://github.com/ElPitagoras14/ani-scrapy/releases).
 
+## 0.9.1
+
+No changes to the library. This release only updates the project's CI and release tooling.
+
 ## 0.9.0
 
 ### Breaking changes
