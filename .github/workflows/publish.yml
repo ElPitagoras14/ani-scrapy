@@ -7,7 +7,7 @@ on:
 
 jobs:
   check-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       version-changed: ${{ steps.compare.outputs.version-changed }}
       new-version: ${{ steps.compare.outputs.new-version }}
@@ -45,7 +45,7 @@ jobs:
 
   publish:
     needs: [check-version, ci]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
     steps:
@@ -63,7 +63,7 @@ jobs:
 
   release:
     needs: [check-version, publish]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:
