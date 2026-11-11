@@ -36,7 +36,7 @@
 - Commits: `<type>(scope): <description>`, lowercase, imperative, max ~72 chars; as few commits as possible (usually one per change); if there are several, commit `pyproject.toml` last
 - Do NOT commit unless explicitly asked
 - Commits must NOT list Claude as co-author (no `Co-Authored-By` trailer); `.githooks/commit-msg` strips it as a backstop
-- PR titles follow the commit format; labels: `feature` (feat), `bug` (fix), `maintenance` (refactor/chore/docs)
+- PR titles follow the commit format
 
 ## OpenSpec: applying a change
 
