@@ -9,6 +9,7 @@ from ani_scrapy.core.constants.general import (
     MEDIAFIRE_TIMEOUT,
     MONTH_MAP,
 )
+from ani_scrapy.core.constants.servers import SUPPORTED_SERVERS
 
 __all__ = [
     "CONTEXT_OPTIONS",
@@ -18,4 +19,5 @@ __all__ = [
     "SW_TIMEOUT",
     "MEDIAFIRE_TIMEOUT",
     "MONTH_MAP",
+    "SUPPORTED_SERVERS",
 ]

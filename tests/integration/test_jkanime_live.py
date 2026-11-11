@@ -4,8 +4,7 @@ from typing import TypeVar
 
 import pytest
 
-from ani_scrapy import JKAnimeScraper
-from ani_scrapy.providers.jkanime.constants import SUPPORTED_SERVERS
+from ani_scrapy import SUPPORTED_SERVERS, JKAnimeScraper
 
 pytestmark = pytest.mark.live
 
@@ -61,7 +60,11 @@ def test_get_iframe_download_links() -> None:
 def test_get_file_download_link() -> None:
     async def resolve(scraper: JKAnimeScraper) -> list[str | None]:
         table = await scraper.get_table_download_links(ANIME_ID, FILE_EPISODE)
-        links = [lk for lk in table.download_links if lk.server in SUPPORTED_SERVERS]
+        links = [
+            lk
+            for lk in table.download_links
+            if lk.server in SUPPORTED_SERVERS["jkanime"]
+        ]
         return [await scraper.get_file_download_link(lk) for lk in links]
 
     urls = run(resolve)

@@ -5,6 +5,7 @@ from ani_scrapy.core.schemas import AnimeType, RelatedType
 BASE_URL = "https://animeav1.com"
 SEARCH_ENDPOINT = "/catalogo"
 ANIME_COVER_URL = "https://cdn.animeav1.com"
+MP4UPLOAD_URL = "https://www.mp4upload.com"
 
 ANIME_TYPE_MAP = {
     "TV Anime": AnimeType.TV,
@@ -17,5 +18,3 @@ RELATED_TYPE_MAP = {
     1: RelatedType.PREQUEL,
     2: RelatedType.SEQUEL,
 }
-
-SUPPORTED_SERVERS = ["PDrain", "UPNShare"]

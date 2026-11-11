@@ -16,6 +16,7 @@ Repo-specific checklists for recurring maintenance. Process (branches, OpenSpec,
 | HTTP + status-to-exception mapping | `src/ani_scrapy/core/http.py` |
 | Public exports | `src/ani_scrapy/__init__.py` (`__all__`) |
 | Doctor connectivity | `CONNECTIVITY_SITES` in `src/ani_scrapy/cli/doctor.py` |
+| Supported servers per platform | `SUPPORTED_SERVERS` in `src/ani_scrapy/core/constants/servers.py` |
 | HTML fixtures | `tests/fixtures/html/<site>_<page>.html` + fixture in `tests/conftest.py` |
 | Usage skill (guidance for users' agents) | `.claude/skills/ani-scrapy/SKILL.md` |
 
@@ -33,7 +34,7 @@ Repo-specific checklists for recurring maintenance. Process (branches, OpenSpec,
 
 - Scraper subclasses `BaseScraper` and implements all six abstract methods. If the site lacks a capability, ask the maintainer before raising `NotImplementedError`.
 - HTTP through `AsyncHttpAdapter`. Browser only via `self._get_browser()`, only for methods that need JavaScript.
-- Export in `src/ani_scrapy/__init__.py`; add to `CONNECTIVITY_SITES` and update `tests/unit/test_cli/test_doctor.py`.
+- Export in `src/ani_scrapy/__init__.py`; add its key to `SUPPORTED_SERVERS` in `src/ani_scrapy/core/constants/servers.py`; add to `CONNECTIVITY_SITES` and update `tests/unit/test_cli/test_doctor.py`.
 - Tests in `tests/unit/test_<site>/`: parser tests on fixtures, scraper tests mocking `scraper.http.get` with `AsyncMock`. No network.
 - A live test module `tests/integration/test_<site>_live.py`, marked `live`, like the existing ones.
 - Find every place that lists providers and add the new one next to each hit:

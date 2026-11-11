@@ -23,6 +23,9 @@ from ani_scrapy.providers.animeav1.constants import (
 
 STRING_PATTERN = r'"(?:[^"\\]+|\\.)*"'
 BRACE_OR_STRING_PATTERN = re.compile(STRING_PATTERN + r"|[{}]")
+MP4UPLOAD_URL_PATTERN = re.compile(
+    r"^https://(?:www\.)?mp4upload\.com/([A-Za-z0-9]+)/?$"
+)
 MEDIA_KEY_PATTERN = re.compile(STRING_PATTERN + r"|([A-Za-z_$][\w$]*)(?=\s*:)")
 
 
@@ -259,6 +262,20 @@ class AnimeAV1Parser:
             return False
 
         return False
+
+    @staticmethod
+    def parse_mp4upload_file_id(url: str) -> str | None:
+        """Extract the file id from an MP4Upload table link.
+
+        Args:
+            url: MP4Upload URL.
+
+        Returns:
+            The file id, or None if the URL is not in the table form
+            (for example the embed form).
+        """
+        match = MP4UPLOAD_URL_PATTERN.match(url)
+        return match.group(1) if match else None
 
     @staticmethod
     def parse_episode_page(html: str, anime_id: str) -> list[DownloadLinkInfo]:

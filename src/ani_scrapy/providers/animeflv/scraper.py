@@ -15,8 +15,8 @@ from ani_scrapy.providers.animeflv.constants import (
     ANIME_VIDEO_ENDPOINT,
     BASE_EPISODE_IMG_URL,
     SW_DOWNLOAD_URL,
-    SUPPORTED_SERVERS,
 )
+from ani_scrapy.core.constants import SUPPORTED_SERVERS
 from ani_scrapy.core.constants.general import (
     SW_TIMEOUT,
     YOURUPLOAD_TIMEOUT,
@@ -292,11 +292,11 @@ class AnimeFLVScraper(BaseScraper):
 
         logger.info("Getting file download link | server={server}", server=server)
 
-        if server not in SUPPORTED_SERVERS:
+        if server not in SUPPORTED_SERVERS["animeflv"]:
             logger.error(
                 "Server not supported | server={server} supported={supported}",
                 server=server,
-                supported=SUPPORTED_SERVERS,
+                supported=SUPPORTED_SERVERS["animeflv"],
             )
             return None
 

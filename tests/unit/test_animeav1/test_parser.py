@@ -36,3 +36,27 @@ def test_parse_anime_info_without_media_data_raises() -> None:
         AnimeAV1Parser.parse_anime_info(NO_MEDIA_HTML, "missing-anime")
 
     assert "missing-anime" in str(info.value)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.mp4upload.com/fevqfos5cs7q",
+        "https://mp4upload.com/fevqfos5cs7q",
+    ],
+)
+def test_parse_mp4upload_file_id(url: str) -> None:
+    assert AnimeAV1Parser.parse_mp4upload_file_id(url) == "fevqfos5cs7q"
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.mp4upload.com/embed-fevqfos5cs7q.html",
+        "https://example.com/fevqfos5cs7q",
+        "https://www.mp4upload.com/",
+        "",
+    ],
+)
+def test_parse_mp4upload_file_id_rejects_other_urls(url: str) -> None:
+    assert AnimeAV1Parser.parse_mp4upload_file_id(url) is None

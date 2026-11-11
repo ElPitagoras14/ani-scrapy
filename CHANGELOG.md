@@ -2,6 +2,41 @@
 
 While the library is on 0.x, breaking changes bump the minor version and fixes bump the patch version. Releases before 0.8.0 are listed in [GitHub Releases](https://github.com/ElPitagoras14/ani-scrapy/releases).
 
+## 0.10.0
+
+### Breaking changes
+
+- **`SUPPORTED_SERVERS` is now one dict keyed by platform.** The per-provider constants in `ani_scrapy.providers.<site>.constants` are removed; importing them raises `ImportError`. The dict is exported from `ani_scrapy` and has the keys `animeflv`, `jkanime` and `animeav1`.
+
+  Before:
+
+  ```python
+  from ani_scrapy.providers.jkanime.constants import SUPPORTED_SERVERS as JKANIME_SUPPORTED_SERVERS
+
+  valid = [l for l in links.download_links if l.server in JKANIME_SUPPORTED_SERVERS]
+  ```
+
+  After:
+
+  ```python
+  from ani_scrapy import SUPPORTED_SERVERS
+
+  valid = [l for l in links.download_links if l.server in SUPPORTED_SERVERS["jkanime"]]
+  ```
+
+### Added
+
+- **AnimeAV1 resolves MP4Upload.** `get_file_download_link` now returns a direct `.mp4` URL for the `MP4Upload` links from `get_table_download_links`, over HTTP only (no browser). `MP4Upload` is now in AnimeAV1's `SUPPORTED_SERVERS`, so AnimeAV1 episodes can be downloaded again (part of #30; UPNShare is still not working).
+  - Iframe MP4Upload links (`embed-<id>.html`) are not resolved and return `None`.
+  - Downloading the returned URL needs the `Referer` header, otherwise the host answers 403. Resolve right before downloading:
+
+    ```python
+    links = await scraper.get_table_download_links("black-clover", 1)
+    link = next(l for l in links.download_links if l.server == "MP4Upload")
+    url = await scraper.get_file_download_link(link)
+    headers = {"Referer": "https://www.mp4upload.com/"}
+    ```
+
 ## 0.9.1
 
 No changes to the library. This release only updates the project's CI and release tooling.

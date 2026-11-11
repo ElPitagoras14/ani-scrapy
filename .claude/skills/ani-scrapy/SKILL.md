@@ -1,6 +1,6 @@
 ---
 name: ani-scrapy
-description: "Use when writing Python code that scrapes anime sites with the ani-scrapy library. Triggers when the user mentions AnimeFLV, JKAnime, AnimeAV1, anime search/scraping, downloading anime episodes, getting download links from servers like Streamwish, YourUpload, Mediafire, Pixeldrain or UPNShare, using AnimeFLVScraper / JKAnimeScraper / AnimeAV1Scraper / AsyncBrowser, or imports from ani_scrapy. Always use this skill whenever ani-scrapy is imported, mentioned, or whenever the user asks to automate anime episode info retrieval, get new episodes, or resolve final download URLs from a Spanish anime site."
+description: "Use when writing Python code that scrapes anime sites with the ani-scrapy library. Triggers when the user mentions AnimeFLV, JKAnime, AnimeAV1, anime search/scraping, downloading anime episodes, getting download links from servers like Streamwish, YourUpload, Mediafire, Pixeldrain, UPNShare or MP4Upload, using AnimeFLVScraper / JKAnimeScraper / AnimeAV1Scraper / AsyncBrowser, or imports from ani_scrapy. Always use this skill whenever ani-scrapy is imported, mentioned, or whenever the user asks to automate anime episode info retrieval, get new episodes, or resolve final download URLs from a Spanish anime site."
 ---
 
 # ani-scrapy
@@ -35,14 +35,15 @@ from ani_scrapy import (
 )
 ```
 
-Everything is exported from the top-level `ani_scrapy` package — prefer those imports over reaching into submodules. The one exception is the per-provider `SUPPORTED_SERVERS` constant, which lives under each provider:
+Everything is exported from the top-level `ani_scrapy` package — prefer those imports over reaching into submodules. That includes `SUPPORTED_SERVERS`, a dict from platform (`animeflv`, `jkanime`, `animeav1`) to the servers `get_file_download_link()` can resolve:
 
 ```python
-from ani_scrapy.providers.jkanime.constants  import SUPPORTED_SERVERS as JKANIME_SUPPORTED_SERVERS
-from ani_scrapy.providers.animeav1.constants import SUPPORTED_SERVERS as ANIMEAV1_SUPPORTED_SERVERS
+from ani_scrapy import SUPPORTED_SERVERS
+
+SUPPORTED_SERVERS["animeav1"]  # ["PDrain", "UPNShare", "MP4Upload"]
 ```
 
-Use these to filter `download_links` down to servers whose final URL can actually be resolved by `get_file_download_link()`.
+Use it to filter `download_links` down to servers whose final URL can actually be resolved by `get_file_download_link()`.
 
 ## Core Pattern — async context manager
 
@@ -87,7 +88,7 @@ This matters because **opening a browser is the most expensive thing in this lib
 | `get_new_episodes`           | HTTP       | **Browser**| HTTP                              |
 | `get_table_download_links`   | HTTP       | **Browser**| HTTP                              |
 | `get_iframe_download_links`  | **Browser**| **Browser**| HTTP                              |
-| `get_file_download_link`     | **Browser**| **Browser**| Browser only for UPNShare server  |
+| `get_file_download_link`     | **Browser**| **Browser**| Browser only for UPNShare server; MP4Upload is HTTP |
 
 You don't toggle this manually — the scraper opens the browser on demand and reuses it within the same `async with` block. The point of the table is: if your script only calls HTTP-only methods, `playwright install chromium` is not strictly required at runtime, and the script will be much faster.
 
@@ -102,11 +103,14 @@ You don't toggle this manually — the scraper opens the browser on demand and r
 | Mediafire   | -        | yes     | -        |
 | Pixeldrain  | -        | -       | yes      |
 | UPNShare    | -        | -       | yes      |
+| MP4Upload   | -        | -       | yes      |
+
+AnimeAV1 `MP4Upload` resolves only from table links (`get_table_download_links`), not from iframe links. Downloading the returned URL needs the header `Referer: https://www.mp4upload.com/`, otherwise the host answers 403. Resolve right before downloading.
 
 ```python
-from ani_scrapy.providers.animeav1.constants import SUPPORTED_SERVERS
+from ani_scrapy import SUPPORTED_SERVERS
 
-valid = [l for l in links.download_links if l.server in SUPPORTED_SERVERS]
+valid = [l for l in links.download_links if l.server in SUPPORTED_SERVERS["animeav1"]]
 for link in valid:
     final = await scraper.get_file_download_link(link)
 ```
@@ -320,8 +324,7 @@ The full pipeline, showing one scraper, one browser, many operations:
 
 ```python
 import asyncio
-from ani_scrapy import AnimeAV1Scraper
-from ani_scrapy.providers.animeav1.constants import SUPPORTED_SERVERS
+from ani_scrapy import SUPPORTED_SERVERS, AnimeAV1Scraper
 
 async def fetch_download_url(query: str, episode: int) -> str | None:
     async with AnimeAV1Scraper() as scraper:
@@ -335,7 +338,7 @@ async def fetch_download_url(query: str, episode: int) -> str | None:
 
         links = await scraper.get_iframe_download_links(anime.id, episode)
         for link in links.download_links:
-            if link.server in SUPPORTED_SERVERS:
+            if link.server in SUPPORTED_SERVERS["animeav1"]:
                 final = await scraper.get_file_download_link(link)
                 if final:
                     return final
@@ -347,7 +350,7 @@ print(asyncio.run(fetch_download_url("gachiakuta", episode=1)))
 ## Common pitfalls
 
 - **Opening a new scraper per anime in a loop.** Re-launches the browser every iteration. Open one `async with`, reuse the scraper across calls and across `asyncio.gather`.
-- **Forgetting to filter by `SUPPORTED_SERVERS`.** `get_file_download_link()` returns `None` for unsupported servers — looks like a bug, isn't one. Filter first.
+- **Forgetting to filter by `SUPPORTED_SERVERS[<platform>]`.** `get_file_download_link()` returns `None` for unsupported servers — looks like a bug, isn't one. Filter first.
 - **Calling `get_anime_info` with `include_episodes=True` on JKAnime when you only need metadata.** It opens the browser unnecessarily. Pass `include_episodes=False`.
 - **Catching `Exception` broadly.** Mask retryable errors. Catch `ScraperNotFoundError` / `ScraperTimeoutError` / `ScraperHTTPError` / `ScraperBlockedError` specifically and only fall back to `ScraperError` for the catch-all.
 - **Assuming pagination.** Only AnimeAV1 returns real `total_pages`. For AnimeFLV/JKAnime, you'll always see `total_pages == 1`.

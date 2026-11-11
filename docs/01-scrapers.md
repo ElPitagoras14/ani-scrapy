@@ -143,6 +143,15 @@ Resolves final download URLs from intermediate links.
 | Mediafire       | ❌       | ✅      | ❌       |
 | Pixeldrain      | ❌       | ❌      | ✅       |
 | UPNShare        | ❌       | ❌      | ✅       |
+| MP4Upload       | ❌       | ❌      | ✅       |
+
+The same information is available in code as `SUPPORTED_SERVERS`, a dict from platform to supported servers:
+
+```python
+from ani_scrapy import SUPPORTED_SERVERS
+
+valid = [l for l in links.download_links if l.server in SUPPORTED_SERVERS["jkanime"]]
+```
 
 ---
 
@@ -164,6 +173,8 @@ Resolves final download URLs from intermediate links.
 
 - All methods work with HTTP-only.
 - `get_file_download_link` requires a browser only for UPNShare server.
+- MP4Upload resolves from the table links (`get_table_download_links`) over HTTP only. Iframe links (`embed-<id>.html`) are not resolved and return `None`.
+- Downloading an MP4Upload file URL needs the header `Referer: https://www.mp4upload.com/` (without it the host answers 403). Resolve the link right before downloading, from the machine that downloads.
 
 ---
 

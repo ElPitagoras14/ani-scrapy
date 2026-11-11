@@ -1,5 +1,6 @@
 from ani_scrapy.core.base import BaseScraper
 from ani_scrapy.core.browser import AsyncBrowser
+from ani_scrapy.core.constants import SUPPORTED_SERVERS
 from ani_scrapy.core.exceptions import (
     ScraperBlockedError,
     ScraperError,
@@ -45,5 +46,6 @@ __all__ = [
     "ScraperNotFoundError",
     "ScraperParseError",
     "ScraperTimeoutError",
+    "SUPPORTED_SERVERS",
     "enable_logging",
 ]

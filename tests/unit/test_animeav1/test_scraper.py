@@ -7,7 +7,12 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from ani_scrapy.core.exceptions import ScraperHTTPError, ScraperParseError
+from ani_scrapy.core.exceptions import (
+    ScraperBlockedError,
+    ScraperHTTPError,
+    ScraperParseError,
+)
+from ani_scrapy.core.schemas import DownloadLinkInfo
 from ani_scrapy.providers.animeav1 import scraper as scraper_module
 from ani_scrapy.providers.animeav1.scraper import AnimeAV1Scraper
 
@@ -107,3 +112,67 @@ def test_failed_refresh_returns_empty_schedule(
         return await scraper._get_schedule()
 
     assert asyncio.run(run()) == {}
+
+
+MP4UPLOAD_LINK = DownloadLinkInfo(
+    server="MP4Upload", url="https://www.mp4upload.com/fevqfos5cs7q"
+)
+FILE_URL = "https://a4.mp4upload.com:183/d/token/video.mp4"
+
+
+def _make_mp4upload_scraper(
+    location: str | None = FILE_URL,
+    error: Exception | None = None,
+) -> AnimeAV1Scraper:
+    scraper = AnimeAV1Scraper()
+    scraper.mp4upload_http.post_redirect_location = AsyncMock(
+        return_value=location, side_effect=error
+    )
+    scraper._get_browser = AsyncMock()
+    return scraper
+
+
+def test_mp4upload_table_link_resolves_to_file_url() -> None:
+    scraper = _make_mp4upload_scraper()
+
+    result = asyncio.run(scraper.get_file_download_link(MP4UPLOAD_LINK))
+
+    assert result == FILE_URL
+    endpoint, data = scraper.mp4upload_http.post_redirect_location.call_args.args
+    assert endpoint == "fevqfos5cs7q"
+    assert data["op"] == "download2"
+    assert data["id"] == "fevqfos5cs7q"
+    assert data["method_free"] == "Free Download"
+    scraper._get_browser.assert_not_called()
+
+
+def test_mp4upload_without_location_returns_none() -> None:
+    scraper = _make_mp4upload_scraper(location=None)
+
+    assert asyncio.run(scraper.get_file_download_link(MP4UPLOAD_LINK)) is None
+
+
+def test_mp4upload_relative_location_is_joined() -> None:
+    scraper = _make_mp4upload_scraper(location="/d/token/video.mp4")
+
+    result = asyncio.run(scraper.get_file_download_link(MP4UPLOAD_LINK))
+
+    assert result == "https://www.mp4upload.com/d/token/video.mp4"
+
+
+def test_mp4upload_embed_link_returns_none_without_request() -> None:
+    scraper = _make_mp4upload_scraper()
+    embed = DownloadLinkInfo(
+        server="MP4Upload",
+        url="https://www.mp4upload.com/embed-fevqfos5cs7q.html",
+    )
+
+    assert asyncio.run(scraper.get_file_download_link(embed)) is None
+    scraper.mp4upload_http.post_redirect_location.assert_not_called()
+
+
+def test_mp4upload_blocked_error_propagates() -> None:
+    scraper = _make_mp4upload_scraper(error=ScraperBlockedError("blocked"))
+
+    with pytest.raises(ScraperBlockedError):
+        asyncio.run(scraper.get_file_download_link(MP4UPLOAD_LINK))
