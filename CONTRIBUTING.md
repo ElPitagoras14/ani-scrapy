@@ -50,7 +50,7 @@ uv run ruff check src/
 
 ## Git Conventions
 
-Follow the conventions defined in [AGENTS.md](./AGENTS.md).
+Follow the conventions defined in [CLAUDE.md](./CLAUDE.md).
 
 ## Project Structure
 
