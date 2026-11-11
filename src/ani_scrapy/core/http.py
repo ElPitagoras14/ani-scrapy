@@ -2,6 +2,8 @@
 
 import asyncio
 import time
+from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 import aiohttp
 
@@ -16,6 +18,8 @@ from ani_scrapy.core.log import logger
 
 NOT_FOUND_STATUSES = (404, 410)
 BLOCKED_STATUSES = (403, 429)
+
+T = TypeVar("T")
 
 
 def raise_for_status_code(status: int, url: str) -> None:
@@ -72,7 +76,13 @@ class AsyncHttpAdapter(BaseHttpAdapter):
             self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
         return self._session
 
-    async def _request(self, method: str, endpoint: str, **kwargs) -> str:
+    async def _request(
+        self,
+        method: str,
+        endpoint: str,
+        read: Callable[[aiohttp.ClientResponse], Awaitable[T]],
+        **kwargs,
+    ) -> T:
         session = await self._get_session()
         url = self.build_url(endpoint)
         logger.debug(
@@ -94,7 +104,7 @@ class AsyncHttpAdapter(BaseHttpAdapter):
                     status_code=response.status,
                     duration_ms=round(duration_ms, 2),
                 )
-                return await response.text()
+                return await read(response)
         except asyncio.TimeoutError as e:
             logger.error("HTTP {method} timeout | url={url}", method=method, url=url)
             raise ScraperTimeoutError(f"HTTP request timed out: {url}") from e
@@ -112,11 +122,34 @@ class AsyncHttpAdapter(BaseHttpAdapter):
 
     async def get(self, endpoint: str, params: dict | None = None) -> str:
         """Async GET request."""
-        return await self._request("GET", endpoint, params=params)
+        return await self._request("GET", endpoint, lambda r: r.text(), params=params)
 
     async def post(self, endpoint: str, data: dict | None = None) -> str:
         """Async POST request."""
-        return await self._request("POST", endpoint, data=data)
+        return await self._request("POST", endpoint, lambda r: r.text(), data=data)
+
+    async def post_redirect_location(
+        self, endpoint: str, data: dict | None = None
+    ) -> str | None:
+        """Async POST that does not follow redirects.
+
+        Args:
+            endpoint: Endpoint relative to the base URL.
+            data: Form fields to send.
+
+        Returns:
+            The Location header of the redirect response, or None if the
+            response is not a redirect.
+        """
+
+        async def location(response: aiohttp.ClientResponse) -> str | None:
+            if 300 <= response.status < 400:
+                return response.headers.get("Location")
+            return None
+
+        return await self._request(
+            "POST", endpoint, location, data=data, allow_redirects=False
+        )
 
     async def close(self) -> None:
         """Close aiohttp session."""

@@ -2,6 +2,7 @@
 
 import time
 from datetime import datetime
+from urllib.parse import urljoin
 
 from ani_scrapy.core.log import logger
 
@@ -9,7 +10,11 @@ from ani_scrapy.core.base import BaseScraper
 from ani_scrapy.core.browser import AsyncBrowser
 from ani_scrapy.core.http import AsyncHttpAdapter
 from ani_scrapy.providers.animeav1.parser import AnimeAV1Parser
-from ani_scrapy.providers.animeav1.constants import BASE_URL, SEARCH_ENDPOINT
+from ani_scrapy.providers.animeav1.constants import (
+    BASE_URL,
+    MP4UPLOAD_URL,
+    SEARCH_ENDPOINT,
+)
 from ani_scrapy.core.schemas import (
     PagedSearchAnimeInfo,
     AnimeInfo,
@@ -43,6 +48,7 @@ class AnimeAV1Scraper(BaseScraper):
             external_browser=external_browser,
         )
         self.http = AsyncHttpAdapter(base_url=BASE_URL)
+        self.mp4upload_http = AsyncHttpAdapter(base_url=MP4UPLOAD_URL)
         self.parser = AnimeAV1Parser()
         self._schedule_cache: dict[str, datetime] = {}
         self._schedule_cache_ttl = schedule_cache_ttl
@@ -214,6 +220,8 @@ class AnimeAV1Scraper(BaseScraper):
             return await self._get_pdrawin_download_link(url)
         elif server == "UPNShare":
             return await self._get_upnshare_download_link(url)
+        elif server == "MP4Upload":
+            return await self._get_mp4upload_download_link(url)
         else:
             logger.warning("Server not supported | server={server}", server=server)
             return None
@@ -222,6 +230,34 @@ class AnimeAV1Scraper(BaseScraper):
         """Get PDrain download link."""
         file_id = url.split("/")[-1].split("?")[0]
         return f"https://pixeldrain.com/api/file/{file_id}?download"
+
+    async def _get_mp4upload_download_link(self, url: str) -> str | None:
+        """Get MP4Upload download link from a table link."""
+
+        file_id = self.parser.parse_mp4upload_file_id(url)
+        if file_id is None:
+            logger.warning("MP4Upload link is not a table link | url={url}", url=url)
+            return None
+
+        location = await self.mp4upload_http.post_redirect_location(
+            file_id,
+            {
+                "op": "download2",
+                "id": file_id,
+                "rand": "",
+                "referer": "",
+                "method_free": "Free Download",
+                "method_premium": "",
+            },
+        )
+
+        if location is None:
+            logger.warning(
+                "MP4Upload file not available | file_id={file_id}", file_id=file_id
+            )
+            return None
+
+        return urljoin(MP4UPLOAD_URL, location)
 
     async def _get_upnshare_download_link(self, url: str) -> str | None:
         """Get UPNShare download link."""
@@ -272,4 +308,5 @@ class AnimeAV1Scraper(BaseScraper):
     async def aclose(self) -> None:
         """Cleanup resources."""
         await self.http.close()
+        await self.mp4upload_http.close()
         await super().aclose()

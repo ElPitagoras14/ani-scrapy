@@ -85,3 +85,64 @@ def test_timeout_is_timeout_error(adapter: AsyncHttpAdapter) -> None:
         mocked.get(URL, exception=asyncio.TimeoutError())
         with pytest.raises(ScraperTimeoutError):
             _get(adapter)
+
+
+def _post_location(adapter: AsyncHttpAdapter) -> str | None:
+    async def run() -> str | None:
+        try:
+            return await adapter.post_redirect_location("media/slug", {"op": "x"})
+        finally:
+            await adapter.close()
+
+    return asyncio.run(run())
+
+
+def test_post_redirect_location_returns_location_without_following(
+    adapter: AsyncHttpAdapter,
+) -> None:
+    target = "https://files.test/video.mp4"
+    with aioresponses() as mocked:
+        mocked.post(URL, status=302, headers={"Location": target})
+        assert _post_location(adapter) == target
+        assert ("GET", target) not in [(m, str(u)) for (m, u) in mocked.requests]
+
+
+def test_post_redirect_location_without_redirect_returns_none(
+    adapter: AsyncHttpAdapter,
+) -> None:
+    with aioresponses() as mocked:
+        mocked.post(URL, status=200, body="No such file")
+        assert _post_location(adapter) is None
+
+
+@pytest.mark.parametrize(
+    ("status", "error"),
+    [
+        (403, ScraperBlockedError),
+        (404, ScraperNotFoundError),
+        (503, ScraperHTTPError),
+    ],
+)
+def test_post_redirect_location_maps_status(
+    adapter: AsyncHttpAdapter, status: int, error: type[Exception]
+) -> None:
+    with aioresponses() as mocked:
+        mocked.post(URL, status=status)
+        with pytest.raises(error) as info:
+            _post_location(adapter)
+    assert info.value.status_code == status
+
+
+def test_post_redirect_location_connection_error(adapter: AsyncHttpAdapter) -> None:
+    with aioresponses() as mocked:
+        mocked.post(URL, exception=aiohttp.ClientConnectionError("down"))
+        with pytest.raises(ScraperHTTPError) as info:
+            _post_location(adapter)
+    assert info.value.status_code is None
+
+
+def test_post_redirect_location_timeout(adapter: AsyncHttpAdapter) -> None:
+    with aioresponses() as mocked:
+        mocked.post(URL, exception=asyncio.TimeoutError())
+        with pytest.raises(ScraperTimeoutError):
+            _post_location(adapter)

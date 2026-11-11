@@ -19,5 +19,3 @@ RELATED_TYPE_MAP = {
     "Secuela": RelatedType.SEQUEL,
     "Precuela": RelatedType.PREQUEL,
 }
-
-SUPPORTED_SERVERS = ["Streamwish", "Mediafire"]

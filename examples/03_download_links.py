@@ -14,13 +14,7 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 
-from ani_scrapy import JKAnimeScraper, AnimeAV1Scraper
-from ani_scrapy.providers.jkanime.constants import (
-    SUPPORTED_SERVERS as JKANIME_SUPPORTED_SERVERS,
-)
-from ani_scrapy.providers.animeav1.constants import (
-    SUPPORTED_SERVERS as ANIMEAV1_SUPPORTED_SERVERS,
-)
+from ani_scrapy import SUPPORTED_SERVERS, JKAnimeScraper, AnimeAV1Scraper
 
 BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
@@ -78,7 +72,7 @@ async def main():
                 valid_downloads = [
                     link
                     for link in table_links.download_links
-                    if link.server in JKANIME_SUPPORTED_SERVERS
+                    if link.server in SUPPORTED_SERVERS["jkanime"]
                 ]
 
                 if valid_downloads:
@@ -140,7 +134,7 @@ async def main():
                 valid_downloads = [
                     link
                     for link in table_links.download_links
-                    if link.server in ANIMEAV1_SUPPORTED_SERVERS
+                    if link.server in SUPPORTED_SERVERS["animeav1"]
                 ]
 
                 if valid_downloads:
@@ -192,7 +186,7 @@ async def main():
                 valid_iframes = [
                     link
                     for link in iframe_links.download_links
-                    if link.server in ANIMEAV1_SUPPORTED_SERVERS
+                    if link.server in SUPPORTED_SERVERS["animeav1"]
                 ]
 
                 if valid_iframes:

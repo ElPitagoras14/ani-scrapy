@@ -1,11 +1,11 @@
 import asyncio
+import urllib.request
 from collections.abc import Awaitable, Callable
 from typing import TypeVar
 
 import pytest
 
-from ani_scrapy import AnimeAV1Scraper
-from ani_scrapy.providers.animeav1.constants import SUPPORTED_SERVERS
+from ani_scrapy import SUPPORTED_SERVERS, AnimeAV1Scraper
 
 pytestmark = pytest.mark.live
 
@@ -53,10 +53,6 @@ def test_get_iframe_download_links() -> None:
     assert all(link.server for link in result.download_links)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="no supported server resolves to a file link (issue #30)",
-)
 def test_get_file_download_link() -> None:
     async def resolve(scraper: AnimeAV1Scraper) -> list[str | None]:
         table = await scraper.get_table_download_links(ANIME_ID, EPISODE)
@@ -64,10 +60,27 @@ def test_get_file_download_link() -> None:
         links = [
             lk
             for lk in table.download_links + iframe.download_links
-            if lk.server in SUPPORTED_SERVERS
+            if lk.server in SUPPORTED_SERVERS["animeav1"]
         ]
         return [await scraper.get_file_download_link(lk) for lk in links]
 
     urls = run(resolve)
 
     assert any(url and url.startswith("http") for url in urls)
+
+
+def test_get_file_download_link_mp4upload() -> None:
+    async def resolve(scraper: AnimeAV1Scraper) -> str | None:
+        table = await scraper.get_table_download_links("black-clover", 1)
+        link = next(lk for lk in table.download_links if lk.server == "MP4Upload")
+        return await scraper.get_file_download_link(link)
+
+    url = run(resolve)
+
+    assert url and url.startswith("https://")
+    request = urllib.request.Request(
+        url,
+        headers={"Referer": "https://www.mp4upload.com/", "Range": "bytes=0-15"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        assert response.status in (200, 206)
