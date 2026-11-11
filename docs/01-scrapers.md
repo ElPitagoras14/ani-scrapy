@@ -5,7 +5,7 @@ All scrapers inherit from `BaseScraper` and share the same public API. The imple
 ## Imports
 
 ```python
-from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper
+from ani_scrapy import JKAnimeScraper, AnimeAV1Scraper
 ```
 
 ## Public Methods
@@ -148,8 +148,9 @@ Resolves final download URLs from intermediate links.
 
 ## Provider-specific Notes
 
-### AnimeFLV
+### AnimeFLV (deprecated)
 
+- The site moved and the provider no longer works; it will be removed in a future version.
 - All methods work with HTTP-only except `get_iframe_download_links` and `get_file_download_link` which require a browser.
 
 ### JKAnime
@@ -171,7 +172,7 @@ Resolves final download URLs from intermediate links.
 All scrapers implement the async context manager protocol:
 
 ```python
-async with AnimeFLVScraper() as scraper:
+async with AnimeAV1Scraper() as scraper:
     # ... use scraper
 # Resources are automatically closed here
 ```
@@ -179,7 +180,7 @@ async with AnimeFLVScraper() as scraper:
 You can also manually close resources using `aclose()`:
 
 ```python
-scraper = AnimeFLVScraper()
+scraper = AnimeAV1Scraper()
 try:
     info = await scraper.get_anime_info("anime-id")
 finally:

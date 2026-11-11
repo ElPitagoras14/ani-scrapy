@@ -16,7 +16,7 @@ from rich.text import Text
 from rich.table import Table
 from rich import print as rprint
 
-from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper
+from ani_scrapy import JKAnimeScraper, AnimeAV1Scraper
 from ani_scrapy.core.schemas import AnimeInfo
 
 BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
@@ -26,12 +26,8 @@ console = Console()
 
 # === CONFIGURATION ===
 # Enable/disable scrapers
-ENABLE_ANIMEFLV = False
 ENABLE_JKANIME = False
 ENABLE_ANIMEAV1 = True
-
-# Variables for AnimeFLV
-ANIMEFLV_ANIME_ID = "yomi-no-tsugai"
 
 # Variables for JKAnime
 JKANIME_ANIME_ID = "yomi-no-tsugai"
@@ -73,42 +69,6 @@ def format_info(anime: AnimeInfo):
 async def main():
     """Run the anime info example."""
     rprint("[bold cyan]=== Example 02: Get Anime Information[/bold cyan]\n")
-
-    if ENABLE_ANIMEFLV:
-        rprint(f"[bold]Fetching AnimeFLV info for:[/bold] '{ANIMEFLV_ANIME_ID}'\n")
-        async with AnimeFLVScraper(
-            headless=False, executable_path=BRAVE_PATH
-        ) as scraper:
-            start_time = time.perf_counter()
-            anime = await scraper.get_anime_info(anime_id=ANIMEFLV_ANIME_ID)
-            elapsed = time.perf_counter() - start_time
-
-            console.print(format_info(anime))
-
-            if anime.episodes:
-                table = Table(title="Episodes")
-                table.add_column("#", style="cyan", width=5)
-                table.add_column("Title", style="magenta")
-                table.add_column("Image", style="dim")
-
-                for ep in anime.episodes[:10]:
-                    table.add_row(
-                        str(ep.episode_number),
-                        f"Episode {ep.episode_number}",
-                        ep.image_preview[:50] + "..." if ep.image_preview else "-",
-                    )
-
-                console.print(table)
-
-                if len(anime.episodes) > 10:
-                    console.print(
-                        f"\n[dim]... and {len(anime.episodes) - 10} more "
-                        + "episodes[/dim]"
-                    )
-
-            rprint(f"\n[dim]Elapsed time: {elapsed:.2f}s[/dim]")
-    else:
-        rprint("[dim][yellow]AnimeFLV disabled[/yellow][/dim]")
 
     if ENABLE_JKANIME:
         rprint(

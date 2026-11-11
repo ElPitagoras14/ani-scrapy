@@ -5,7 +5,7 @@ description: Use when modifying the ani-scrapy library itself in this repository
 
 # Developing ani-scrapy
 
-Repo-specific checklists for recurring maintenance. Process (branches, OpenSpec, commits) lives in `CLAUDE.md`; this skill lists what each kind of change must touch so nothing is left behind. When working through OpenSpec, copy the relevant checklists into `tasks.md`. Where `CONTRIBUTING.md` disagrees with this skill, this skill is current.
+Repo-specific checklists for recurring maintenance. Process (branches, OpenSpec, commits) lives in `CLAUDE.md`; this skill lists what each kind of change must touch so nothing is left behind. When working through OpenSpec, copy the relevant checklists into `tasks.md`.
 
 ## Where things live
 
@@ -21,12 +21,12 @@ Repo-specific checklists for recurring maintenance. Process (branches, OpenSpec,
 
 ## Fixing a provider after a site change
 
-1. Reproduce live with the reported id; save the current page to `tasks/` (gitignored).
+1. Reproduce with `uv run pytest -m live` and the reported id; save the current page to `tasks/` (gitignored).
 2. Write the failing test first. HTML pages: trimmed copy of the real page as a fixture. Embedded data payloads: inline builders, as in `tests/unit/test_animeav1/test_media_parsing.py`.
 3. Fix in `parser.py` (and `constants.py` if URLs or maps changed). Touch `scraper.py` only if the network flow changed.
 4. Check sibling parsers that read the same page or payload (e.g. AnimeAV1 schedule and episode pages share the `__sveltekit_` script).
 5. Unreadable data raises `ScraperParseError` including the anime id. Never return partial or empty objects.
-6. Re-run live: the reported id, a large franchise (`one-piece`) and an airing anime.
+6. Re-run `uv run pytest -m live`, plus the reported id, a large franchise (`one-piece`) and an airing anime.
 7. It ships as a patch release: follow **Releasing**.
 
 ## Adding a provider
@@ -35,6 +35,7 @@ Repo-specific checklists for recurring maintenance. Process (branches, OpenSpec,
 - HTTP through `AsyncHttpAdapter`. Browser only via `self._get_browser()`, only for methods that need JavaScript.
 - Export in `src/ani_scrapy/__init__.py`; add to `CONNECTIVITY_SITES` and update `tests/unit/test_cli/test_doctor.py`.
 - Tests in `tests/unit/test_<site>/`: parser tests on fixtures, scraper tests mocking `scraper.http.get` with `AsyncMock`. No network.
+- A live test module `tests/integration/test_<site>_live.py`, marked `live`, like the existing ones.
 - Find every place that lists providers and add the new one next to each hit:
 
   ```bash
@@ -58,27 +59,24 @@ Repo-specific checklists for recurring maintenance. Process (branches, OpenSpec,
 
 The version bump goes in the same PR as the change (as in 0.8.0 and 0.8.1).
 
-1. Version: fix = patch; feature or new provider = minor; breaking = minor while on 0.x.
-2. `CHANGELOG.md`: new `## X.Y.Z` on top with `Breaking changes` / `Added` / `Changed` / `Deprecated` / `Fixed` as needed. Write from the user's side: what they saw, what they get now, what to change (Before/After code for breaking changes).
-3. `version` in `pyproject.toml` is the only version string. Run `uv lock`; `git diff uv.lock` should change only the `ani-scrapy` version line.
-4. `uv build --out-dir <scratch dir>` must succeed: CI builds the same way before publishing.
-5. Commit `pyproject.toml` and `uv.lock` last.
-6. Merging to `main` IS the release: `publish.yml` tags, creates the GitHub release and uploads to PyPI, and runs no tests. Stop before merging unless the maintainer asks. Never tag or publish by hand.
-7. Notifying downstream consumers ("orquestador") happens only when the maintainer asks.
+1. `uv run pytest -m live` passes. A failing live test blocks the release: fix the provider first.
+2. Version: fix = patch; feature or new provider = minor; breaking = minor while on 0.x.
+3. `CHANGELOG.md`: new `## X.Y.Z` on top with `Breaking changes` / `Added` / `Changed` / `Deprecated` / `Fixed` as needed. Write from the user's side: what they saw, what they get now, what to change (Before/After code for breaking changes).
+4. `version` in `pyproject.toml` is the only version string. Run `uv lock`; `git diff uv.lock` should change only the `ani-scrapy` version line.
+5. `uv build --out-dir <scratch dir>` must succeed: CI builds the same way before publishing.
+6. Commit `pyproject.toml` and `uv.lock` last.
+7. Merging to `main` IS the release: `publish.yml` runs CI, uploads to PyPI, then tags and creates the GitHub release. Stop before merging unless the maintainer asks. Never tag or publish by hand.
+8. Notifying downstream consumers ("orquestador") happens only when the maintainer asks.
 
 ## Verify
 
 ```bash
-uv run --no-sync pytest
-uv run --no-sync ruff check src tests
-uv run --no-sync ruff format --check src tests
+uv run pytest
+uv run ruff check src tests
+uv run ruff format --check src tests
 ```
 
-`--no-sync` is required: without it uv uninstalls the editable package from `.venv` (the project has no `[build-system]`) and every test fails with `ModuleNotFoundError: ani_scrapy`.
-
-If `ruff format` flags files you touched that were already unformatted, reformat them in a separate `chore(format): ...` commit before your change, so the diff of the change stays readable.
-
-Provider changes also need the live check above; there is no live test suite.
+Provider changes also need `uv run pytest -m live`.
 
 ## Common mistakes
 

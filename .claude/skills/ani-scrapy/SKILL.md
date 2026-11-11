@@ -14,13 +14,13 @@ pip install ani-scrapy
 playwright install chromium   # one-time, required for browser-backed methods
 ```
 
-Python >= 3.10.14.
+Python >= 3.11.
 
 ## Key Imports
 
 ```python
 from ani_scrapy import (
-    AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper,
+    JKAnimeScraper, AnimeAV1Scraper,
     AsyncBrowser,
     enable_logging,
 )
@@ -38,7 +38,6 @@ from ani_scrapy import (
 Everything is exported from the top-level `ani_scrapy` package — prefer those imports over reaching into submodules. The one exception is the per-provider `SUPPORTED_SERVERS` constant, which lives under each provider:
 
 ```python
-from ani_scrapy.providers.animeflv.constants import SUPPORTED_SERVERS as ANIMEFLV_SUPPORTED_SERVERS
 from ani_scrapy.providers.jkanime.constants  import SUPPORTED_SERVERS as JKANIME_SUPPORTED_SERVERS
 from ani_scrapy.providers.animeav1.constants import SUPPORTED_SERVERS as ANIMEAV1_SUPPORTED_SERVERS
 ```
@@ -51,10 +50,10 @@ All scrapers are async context managers. Use `async with` whenever possible — 
 
 ```python
 import asyncio
-from ani_scrapy import AnimeFLVScraper
+from ani_scrapy import AnimeAV1Scraper
 
 async def main():
-    async with AnimeFLVScraper() as scraper:
+    async with AnimeAV1Scraper() as scraper:
         results = await scraper.search_anime("naruto")
         for anime in results.animes[:5]:
             print(anime.id, anime.title, anime.type.value)
@@ -105,7 +104,7 @@ You don't toggle this manually — the scraper opens the browser on demand and r
 | UPNShare    | -        | -       | yes      |
 
 ```python
-from ani_scrapy.providers.animeflv.constants import SUPPORTED_SERVERS
+from ani_scrapy.providers.animeav1.constants import SUPPORTED_SERVERS
 
 valid = [l for l in links.download_links if l.server in SUPPORTED_SERVERS]
 for link in valid:
@@ -114,12 +113,12 @@ for link in valid:
 
 ## Browser configuration — custom executable (Brave recommended)
 
-Sites with aggressive ads (especially AnimeFLV/JKAnime) sometimes fail or hit captchas with default Chromium. Pointing at a Brave install gives you its native ad-blocker and noticeably better success rates:
+Sites with aggressive ads (especially JKAnime) sometimes fail or hit captchas with default Chromium. Pointing at a Brave install gives you its native ad-blocker and noticeably better success rates:
 
 ```python
 BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
-async with AnimeFLVScraper(headless=True, executable_path=BRAVE_PATH) as scraper:
+async with JKAnimeScraper(headless=True, executable_path=BRAVE_PATH) as scraper:
     info = await scraper.get_anime_info("gachiakuta")
 ```
 
@@ -173,7 +172,7 @@ async with AsyncBrowser(headless=True, executable_path=BRAVE_PATH) as browser:
 The library is built for concurrent use. Reuse one scraper instance across tasks — don't spin up a fresh scraper per anime, that defeats connection pooling and re-launches the browser each time.
 
 ```python
-async with AnimeFLVScraper() as scraper:
+async with AnimeAV1Scraper() as scraper:
     results = await asyncio.gather(
         *(scraper.get_anime_info(aid) for aid in anime_ids),
         return_exceptions=True,  # so one failure doesn't sink the batch
@@ -321,11 +320,11 @@ The full pipeline, showing one scraper, one browser, many operations:
 
 ```python
 import asyncio
-from ani_scrapy import AnimeFLVScraper
-from ani_scrapy.providers.animeflv.constants import SUPPORTED_SERVERS
+from ani_scrapy import AnimeAV1Scraper
+from ani_scrapy.providers.animeav1.constants import SUPPORTED_SERVERS
 
 async def fetch_download_url(query: str, episode: int) -> str | None:
-    async with AnimeFLVScraper() as scraper:
+    async with AnimeAV1Scraper() as scraper:
         results = await scraper.search_anime(query)
         if not results.animes:
             return None
@@ -342,7 +341,7 @@ async def fetch_download_url(query: str, episode: int) -> str | None:
                     return final
         return None
 
-print(asyncio.run(fetch_download_url("gachiakuta", episode=24)))
+print(asyncio.run(fetch_download_url("gachiakuta", episode=1)))
 ```
 
 ## Common pitfalls

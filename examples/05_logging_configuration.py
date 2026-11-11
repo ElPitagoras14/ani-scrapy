@@ -17,7 +17,7 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich import print as rprint
 
-from ani_scrapy import AnimeFLVScraper, enable_logging
+from ani_scrapy import AnimeAV1Scraper, enable_logging
 
 console = Console()
 
@@ -32,7 +32,7 @@ async def main():
     enable_logging(level="DEBUG")
     rprint("[green]✓ ani-scrapy logging enabled[/green]\n")
 
-    async with AnimeFLVScraper() as scraper:
+    async with AnimeAV1Scraper() as scraper:
         await scraper.search_anime(query="test")
     rprint()
 
@@ -42,7 +42,7 @@ async def main():
     enable_logging(level="DEBUG", sink="ani_scrapy.log")
     rprint("[green]✓ Logging to file enabled[/green]\n")
 
-    async with AnimeFLVScraper() as scraper:
+    async with AnimeAV1Scraper() as scraper:
         await scraper.search_anime(query="test")
     rprint()
 
@@ -55,7 +55,7 @@ async def main():
 
     rprint("[bold]Configuration Summary[/bold]")
     summary = """from loguru import logger
-from ani_scrapy import AnimeFLVScraper, enable_logging
+from ani_scrapy import AnimeAV1Scraper, enable_logging
 
 # Configure your application logger
 logger.add("app.log", level="DEBUG")
@@ -64,7 +64,7 @@ logger.add("app.log", level="DEBUG")
 enable_logging(level="DEBUG")
 
 # Use scrapers - library is silent by default
-async with AnimeFLVScraper() as scraper:
+async with AnimeAV1Scraper() as scraper:
     results = await scraper.search_anime("naruto")
 
 # Enable with custom sink

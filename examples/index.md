@@ -6,7 +6,7 @@ This directory contains executable examples demonstrating various use cases of t
 
 | #   | File                        | Description                                      |
 | --- | --------------------------- | ------------------------------------------------ |
-| 01  | `01_basic_search.py`        | Basic anime search using AnimeFLV and JKAnime    |
+| 01  | `01_basic_search.py`        | Basic anime search using JKAnime and AnimeAV1    |
 | 02  | `02_anime_info.py`          | Get detailed anime information including episodes |
 | 03  | `03_download_links.py`      | Retrieve download links from multiple servers    |
 | 04  | `04_concurrent_scraping.py` | Concurrent scraping of multiple anime            |
@@ -26,5 +26,5 @@ uv run python examples/01_basic_search.py
 
 ## Requirements
 
-- Python >= 3.10
+- Python >= 3.11
 - Playwright browser (`playwright install chromium`)

@@ -11,41 +11,45 @@ git clone https://github.com/ElPitagoras14/ani-scrapy.git
 cd ani-scrapy
 uv sync
 playwright install chromium
+git config core.hooksPath .githooks
 ```
 
-## Running Tests
+The `commit-msg` hook in `.githooks/` strips `Co-Authored-By` trailers that mention Claude or Anthropic; human co-authors are kept.
 
-Run the unit tests with uv:
+## Tests
 
 ```bash
 uv run pytest
 ```
 
-Run with coverage:
+The default run uses HTML fixtures and mocked HTTP: it needs no network and no browser. CI runs it on Python 3.11 and 3.14.
+
+Fixtures are snapshots, so they keep passing when a site changes. Live tests check each supported provider (JKAnime, AnimeAV1) against its real site:
 
 ```bash
-uv run pytest --cov=src --cov-report=html
+uv run pytest -m live
 ```
+
+Run them locally, never in CI: they need Playwright Chromium and hit third-party sites. A failing live test means the site changed: fix the provider and refresh its fixtures from the current page.
 
 ## Running Benchmarks
 
 To measure performance across providers:
 
 ```bash
-uv run python scripts/benchmark_providers.py
+uv run python examples/07_benchmark.py
 ```
 
 ## Code Style
 
 The project uses:
 
-- **Ruff** for linting
-- **Type hints** (Python 3.10+)
-
-Run linting:
+- **Ruff** for linting and formatting
+- **Type hints** (Python 3.11+)
 
 ```bash
-uv run ruff check src/
+uv run ruff check src tests
+uv run ruff format --check src tests
 ```
 
 ## Git Conventions
@@ -61,7 +65,7 @@ Follow the conventions defined in [CLAUDE.md](./CLAUDE.md).
 | `src/ani_scrapy/core/browser.py`         | Playwright browser management        |
 | `src/ani_scrapy/core/http.py`             | HTTP I/O                             |
 | `src/ani_scrapy/core/exceptions.py`       | Custom exceptions hierarchy          |
-| `src/ani_scrapy/core/schemas.py`         | Data schemas (Pydantic models)       |
+| `src/ani_scrapy/core/schemas.py`         | Data schemas (dataclasses)       |
 | `src/ani_scrapy/core/log.py`              | Logging utilities                    |
 | `src/ani_scrapy/core/constants/`          | Site constants and configuration     |
 | `src/ani_scrapy/providers/<site>/`        | Provider-specific implementation     |
@@ -73,13 +77,11 @@ Follow the conventions defined in [CLAUDE.md](./CLAUDE.md).
 
 ## Adding a New Scraper
 
-1. Add site constants in `src/ani_scrapy/core/constants/<site>.py`
-2. Create parser in `src/ani_scrapy/<site>/parser.py`
-3. Add scraper in `src/ani_scrapy/<site>/scraper.py`
-4. Expose public imports in `src/ani_scrapy/__init__.py`
-5. Add fixtures under `tests/fixtures/html/`
-6. Add unit tests for the parser
-7. Add integration tests using pytest fixtures
+1. Create `src/ani_scrapy/providers/<site>/` with `constants.py`, `parser.py` and `scraper.py`
+2. Expose public imports in `src/ani_scrapy/__init__.py`
+3. Add fixtures under `tests/fixtures/html/`
+4. Add unit tests for the parser and the scraper
+5. Add a live test module under `tests/integration/`
 
 ### Design Rules
 
@@ -90,8 +92,17 @@ Follow the conventions defined in [CLAUDE.md](./CLAUDE.md).
 ## Testing Philosophy
 
 - Prefer HTML fixtures with pytest
-- Avoid real network access in CI
-- Tests use pytest fixtures for deterministic behavior
+- No real network access in the default run or in CI; live tests are opt-in (`-m live`)
+
+## Python Support
+
+The minimum supported version is the oldest Python that still receives security fixes (currently 3.11). Raising it is a minor release listed under breaking changes in the changelog.
+
+## Releasing
+
+1. `uv run pytest -m live` passes.
+2. Bump `version` in `pyproject.toml` and add the `## X.Y.Z` entry to `CHANGELOG.md` in the same PR.
+3. Merging to `main` publishes: CI runs, then the package is uploaded to PyPI and the tag and GitHub release are created.
 
 ## Pull Requests
 

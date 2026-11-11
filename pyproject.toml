@@ -1,15 +1,25 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "ani-scrapy"
-version = "0.8.1"
+version = "0.9.0"
 description = "Async-first Python library for scraping anime websites. Supports some anime websites with unified interface, detailed metadata, and download links from multiple servers."
 readme = "README.md"
-requires-python = ">=3.10"
-license = { text = "MIT" }
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "github:ElPitagoras14", email = "jonfrgar@espol.edu.ec" }]
 keywords = ["anime", "scraping", "playwright", "async", "python"]
 classifiers = [
+  "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
   "Operating System :: OS Independent",
   "Topic :: Internet :: WWW/HTTP",
   "Topic :: Software Development :: Libraries :: Python Modules",
@@ -26,7 +36,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-examples = ["tabulate>=0.9.0", "rich>=13.0.0"]
+examples = ["tabulate>=0.9.0"]
 
 [project.scripts]
 ani-scrapy = "ani_scrapy.cli:main"
@@ -34,6 +44,9 @@ ani-scrapy = "ani_scrapy.cli:main"
 [project.urls]
 Homepage = "https://github.com/ElPitagoras14/ani-scrapy"
 Repository = "https://github.com/ElPitagoras14/ani-scrapy"
+Changelog = "https://github.com/ElPitagoras14/ani-scrapy/blob/main/CHANGELOG.md"
+Issues = "https://github.com/ElPitagoras14/ani-scrapy/issues"
+Documentation = "https://github.com/ElPitagoras14/ani-scrapy/tree/main/docs"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -272,7 +272,9 @@ class AnimeAV1Parser:
             content = str(script)
             if "__sveltekit_" in content and "downloads:" in content:
                 script_content = content[8:-9]  # Remove <script> and </script>
-                download_links = AnimeAV1Parser._parse_downloads_from_script(script_content)
+                download_links = AnimeAV1Parser._parse_downloads_from_script(
+                    script_content
+                )
                 break
 
         return download_links

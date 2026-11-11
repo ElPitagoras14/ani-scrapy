@@ -1,0 +1,18 @@
+#!/bin/sh
+# Strip AI-assistant co-author trailers (Claude / Anthropic) from commit
+# messages. Human co-authors are kept untouched.
+#
+# Enable once per clone with: git config core.hooksPath .githooks
+
+msg_file="$1"
+tmp_file="${msg_file}.tmp"
+
+grep -viE '^[[:space:]]*co-authored-by:.*(claude|anthropic)' "$msg_file" > "$tmp_file"
+
+# Drop trailing blank lines left behind by the removed trailers
+awk '
+  /^[[:space:]]*$/ { blank = blank $0 "\n"; next }
+  { printf "%s", blank; blank = ""; print }
+' "$tmp_file" > "$msg_file"
+
+rm -f "$tmp_file"

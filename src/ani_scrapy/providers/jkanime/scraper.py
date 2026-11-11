@@ -386,7 +386,11 @@ class JKAnimeScraper(BaseScraper):
             )
 
             if idx > 0 and all_episodes:
-                if new_episodes and new_episodes[-1].episode_number == all_episodes[-1].episode_number:
+                if (
+                    new_episodes
+                    and new_episodes[-1].episode_number
+                    == all_episodes[-1].episode_number
+                ):
                     logger.warning(
                         "Same paged_episode detected, retrying | retries_left={retries}",
                         retries=retries,
