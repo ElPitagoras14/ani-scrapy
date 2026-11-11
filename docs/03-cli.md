@@ -38,18 +38,19 @@ ani-scrapy doctor
 Output example:
 
 ```
-ani-scrapy Doctor Report
-========================
+ani-scrapy doctor
 
-[✓] Python version: 3.11.0
-[✓] Platform: Windows
-[✓] Playwright installed: chromium
-[✓] Brave browser found: C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe
-[✓] AnimeFLV: Reachable
-[✓] JKAnime: Reachable
-[✓] AnimeAV1: Reachable
-
-Result: All checks passed (exit code 0)
+✅ Environment
+  - System Info: Python 3.11.0 (Windows) - 16GB RAM
+✅ Playwright
+  - Chromium: Installed
+  - Browsers: Playwright ready
+✅ Browsers
+  - * Brave (Recommended): Detected: C:\Program Files\BraveSoftware\Brave-Browser\Applicationrave.exe
+✅ Connectivity
+  - jkanime.net: Reachable (HTTP 200)
+  - animeav1.com: Reachable (HTTP 200)
+✅ No issues found. Use Brave for better success rates!
 ```
 
 **JSON (for CI/CD):**
@@ -62,23 +63,38 @@ Output example:
 
 ```json
 {
-  "python_version": "3.11.0",
-  "platform": "Windows",
-  "playwright": {
-    "installed": true,
-    "browser": "chromium"
+  "timestamp": "2026-11-10T22:50:02.383228",
+  "environment": {
+    "python_version": "3.11.0",
+    "platform": "Windows",
+    "architecture": "AMD64",
+    "timestamp": "2026-11-10T22:50:02.383241"
   },
-  "custom_browser": {
-    "found": true,
-    "path": "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
-  },
-  "sites": {
-    "animeflv": {"reachable": true, "latency_ms": 142},
-    "jkanime": {"reachable": true, "latency_ms": 89},
-    "animeav1": {"reachable": true, "latency_ms": 201}
-  },
-  "result": "All checks passed",
-  "exit_code": 0
+  "results": [
+    {
+      "category": "Playwright",
+      "name": "Chromium",
+      "status": "pass",
+      "message": "Installed",
+      "details": {"browser": "chromium"}
+    },
+    {
+      "category": "Connectivity",
+      "name": "jkanime.net",
+      "status": "pass",
+      "message": "Reachable (HTTP 200)",
+      "details": {"url": "https://jkanime.net", "status_code": 200}
+    },
+    {
+      "category": "Connectivity",
+      "name": "animeav1.com",
+      "status": "pass",
+      "message": "Reachable (HTTP 200)",
+      "details": {"url": "https://animeav1.com", "status_code": 200}
+    }
+  ],
+  "exit_code": 0,
+  "summary": "No issues found. Use Brave for better success rates!"
 }
 ```
 
@@ -92,12 +108,11 @@ Output example:
 
 #### Checks Performed
 
-- **Python version**: Verifies Python >= 3.10.14
+- **Python version**: Reports the Python version
 - **Platform**: Detects OS (Windows/Linux/macOS)
 - **Playwright**: Checks if Playwright and Chromium are installed
 - **Custom browser**: Looks for Brave browser (recommended for ad-block)
 - **Site connectivity**: Tests reachability to supported providers
-- **Latency**: Measures response time for each site
 
 ## CI/CD Integration
 

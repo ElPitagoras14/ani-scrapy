@@ -2,7 +2,7 @@
 """
 Example 01: Basic Anime Search
 
-Demonstrates how to search for anime using both AnimeFLV and JKAnime scrapers.
+Demonstrates how to search for anime using the JKAnime and AnimeAV1 scrapers.
 Shows how to configure Loguru for logging (users must configure Loguru themselves).
 """
 
@@ -12,19 +12,15 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 
-from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper
+from ani_scrapy import JKAnimeScraper, AnimeAV1Scraper
 
 console = Console()
 
 
 # === CONFIGURATION ===
 # Enable/disable scrapers
-ENABLE_ANIMEFLV = True
 ENABLE_JKANIME = True
 ENABLE_ANIMEAV1 = True
-
-# Variables for AnimeFLV
-ANIMEFLV_QUERY = "naruto"
 
 # Variables for JKAnime
 JKANIME_QUERY = "naruto"
@@ -36,34 +32,6 @@ ANIMEAV1_QUERY = "naruto"
 async def main():
     """Run the basic search example."""
     rprint("[bold cyan]=== Example 01: Basic Anime Search[/bold cyan]\n")
-
-    if ENABLE_ANIMEFLV:
-        rprint(f"[bold]Searching AnimeFLV for:[/bold] '{ANIMEFLV_QUERY}'\n")
-        async with AnimeFLVScraper() as scraper_flv:
-            rprint("[bold yellow]AnimeFLV:[/bold yellow]")
-            start_flv = time.perf_counter()
-            results_flv = await scraper_flv.search_anime(query=ANIMEFLV_QUERY)
-            elapsed_flv = time.perf_counter() - start_flv
-
-            table = Table(title="AnimeFLV Results")
-            table.add_column("ID", style="cyan")
-            table.add_column("Title", style="magenta")
-            table.add_column("Type", style="green")
-
-            for anime in results_flv.animes[:10]:
-                table.add_row(
-                    anime.id,
-                    anime.title,
-                    anime.type.value or "-",
-                )
-
-            console.print(table)
-            console.print(
-                f"\n[green]Found {len(results_flv.animes)} results on "
-                + f"AnimeFLV[/green] ({elapsed_flv:.2f}s)"
-            )
-    else:
-        rprint("[dim][yellow]AnimeFLV disabled[/yellow][/dim]")
 
     if ENABLE_JKANIME:
         rprint(f"\n[bold]Searching JKAnime for:[/bold] '{JKANIME_QUERY}'\n")

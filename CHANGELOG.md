@@ -1,5 +1,18 @@
 # Changelog
 
+While the library is on 0.x, breaking changes bump the minor version and fixes bump the patch version. Releases before 0.8.0 are listed in [GitHub Releases](https://github.com/ElPitagoras14/ani-scrapy/releases).
+
+## 0.9.0
+
+### Breaking changes
+
+- **Python 3.11 or newer is required.** Python 3.10 reached end of life, so `requires-python` is now `>=3.11`. If you are on Python 3.10, pip keeps installing 0.8.x.
+
+### Changed
+
+- Package metadata is complete: SPDX license, Python 3.11 to 3.14 classifiers, development status, `Typing :: Typed` (the package ships `py.typed`) and Changelog, Issues and Documentation links on PyPI.
+- The `examples` extra only installs `tabulate`.
+
 ## 0.8.1
 
 ### Fixed

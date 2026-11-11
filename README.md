@@ -2,6 +2,10 @@
 
 [![PyPI Version](https://img.shields.io/pypi/v/ani-scrapy.svg)](https://pypi.org/project/ani-scrapy/)
 
+[![CI](https://github.com/ElPitagoras14/ani-scrapy/actions/workflows/ci.yml/badge.svg)](https://github.com/ElPitagoras14/ani-scrapy/actions/workflows/ci.yml)
+
+[![Python Versions](https://img.shields.io/pypi/pyversions/ani-scrapy.svg)](https://pypi.org/project/ani-scrapy/)
+
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## ⚠️ Disclaimer
@@ -48,12 +52,32 @@ pip install ani-scrapy
 
 ## 🐍 Requirements
 
-- Python >= 3.10.14
+- Python >= 3.11
 
 Install browser (only once):
 
 ```bash
 playwright install chromium
+```
+
+## ⚡ Quick Start
+
+```python
+import asyncio
+
+from ani_scrapy import AnimeAV1Scraper
+
+
+async def main():
+    async with AnimeAV1Scraper() as scraper:
+        results = await scraper.search_anime("naruto")
+        anime = results.animes[0]
+
+        info = await scraper.get_anime_info(anime.id)
+        print(info.title, len(info.episodes))
+
+
+asyncio.run(main())
 ```
 
 > **Recommendation**: Use Brave browser for sites with excessive advertising. See [Custom Browser](#custom-browser-brave-recommended) below.
@@ -95,12 +119,12 @@ Ani-Scrapy uses **Loguru** for all logging. By default, logging is **silent** (n
 ### Enable Logging
 
 ```python
-from ani_scrapy import AnimeFLVScraper, enable_logging
+from ani_scrapy import AnimeAV1Scraper, enable_logging
 
 enable_logging(level="DEBUG")  # Enable with DEBUG level to stdout
 
-async with AnimeFLVScraper() as scraper:
-    await scraper.log("naruto")
+async with AnimeAV1Scraper() as scraper:
+    await scraper.search_anime("naruto")
 ```
 
 ### Custom Configuration
@@ -130,11 +154,11 @@ You can configure a custom browser executable path. Brave is recommended because
 ### Configuration
 
 ```python
-from ani_scrapy import AnimeFLVScraper
+from ani_scrapy import JKAnimeScraper
 
 brave_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
 
-async with AnimeFLVScraper(executable_path=brave_path) as scraper:
+async with JKAnimeScraper(executable_path=brave_path) as scraper:
     info = await scraper.get_anime_info(anime_id="anime-id")
 ```
 
@@ -179,7 +203,6 @@ Test conditions: Anime "Gachiakuta", Episode 24, Query: "gach" (2026-04-12)
 
 | Provider | search_anime | get_anime_info | get_table_download_links | get_iframe_download_links |
 | -------- | ------------ | -------------- | ------------------------- | ------------------------- |
-| AnimeFLV | 316.18 ms    | 849.96 ms      | 251.40 ms                | 5070.68 ms                |
 | JKAnime  | 468.76 ms    | 30945.13 ms    | 1661.44 ms               | 8802.14 ms                |
 | AnimeAV1 | 517.24 ms    | 355.09 ms      | 298.78 ms                | 299.14 ms                 |
 
@@ -281,6 +304,10 @@ async def scrape_multiple_animes(anime_ids, scraper):
     results = await asyncio.gather(*tasks, return_exceptions=True)
     return results
 ```
+
+## 🤖 Using with AI agents
+
+The repository ships a usage skill for Claude Code. Copy `.claude/skills/ani-scrapy/` into your project's `.claude/skills/` so the agent writes correct `ani_scrapy` code.
 
 ## 📄 License
 

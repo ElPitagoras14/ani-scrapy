@@ -8,14 +8,14 @@ Usage:
     python examples/02_anime_info.py
     ...
 
-All examples use AnimeFLV and JKAnime scrapers with proper logging
+All examples use JKAnime and AnimeAV1 scrapers with proper logging
 configuration.
 """
 
-from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AsyncBrowser
+from ani_scrapy import AnimeAV1Scraper, JKAnimeScraper, AsyncBrowser
 
 __all__ = [
-    "AnimeFLVScraper",
+    "AnimeAV1Scraper",
     "JKAnimeScraper",
     "AsyncBrowser",
 ]

@@ -14,10 +14,7 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 
-from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper
-from ani_scrapy.providers.animeflv.constants import (
-    SUPPORTED_SERVERS as ANIMEFLV_SUPPORTED_SERVERS,
-)
+from ani_scrapy import JKAnimeScraper, AnimeAV1Scraper
 from ani_scrapy.providers.jkanime.constants import (
     SUPPORTED_SERVERS as JKANIME_SUPPORTED_SERVERS,
 )
@@ -32,13 +29,8 @@ console = Console()
 
 # === CONFIGURATION ===
 # Enable/disable scrapers
-ENABLE_ANIMEFLV = False
 ENABLE_JKANIME = True
 ENABLE_ANIMEAV1 = True
-
-# Variables for AnimeFLV
-ANIMEFLV_ANIME_ID = "gachiakuta"
-ANIMEFLV_EPISODE = 24
 
 # Variables for JKAnime
 JKANIME_ANIME_ID = "gachiakuta"
@@ -52,91 +44,6 @@ ANIMEAV1_EPISODE = 7
 async def main():
     """Run the download links example."""
     rprint("[bold cyan]=== Example 03: Download Links[/bold cyan]\n")
-
-    if ENABLE_ANIMEFLV:
-        rprint(
-            f"[bold]Getting AnimeFLV download links for:[/bold] {ANIMEFLV_ANIME_ID} - "
-            + f"Episode {ANIMEFLV_EPISODE}\n"
-        )
-        async with AnimeFLVScraper(
-            headless=True,
-            executable_path=BRAVE_PATH,
-        ) as scraper_flv:
-            rprint("[bold yellow]=== AnimeFLV Table Download Links ===[/bold yellow]")
-            start_flv = time.perf_counter()
-            table_links = await scraper_flv.get_table_download_links(
-                anime_id=ANIMEFLV_ANIME_ID, episode_number=ANIMEFLV_EPISODE
-            )
-
-            if table_links.download_links:
-                table = Table(title="AnimeFLV Direct Download Links")
-                table.add_column("Server", style="cyan")
-                table.add_column("URL", style="magenta")
-
-                for link in table_links.download_links:
-                    url_display = (
-                        link.url[:60] + "..."
-                        if link.url and len(link.url) > 60
-                        else link.url or "N/A"
-                    )
-                    table.add_row(link.server, url_display)
-
-                console.print(table)
-            else:
-                rprint("[yellow]No table download links found for AnimeFLV[/yellow]")
-
-            rprint(
-                "\n[bold yellow]=== AnimeFLV Iframe Download Links "
-                + "===[/bold yellow]"
-            )
-            iframe_links = await scraper_flv.get_iframe_download_links(
-                anime_id=ANIMEFLV_ANIME_ID, episode_number=ANIMEFLV_EPISODE
-            )
-
-            if iframe_links.download_links:
-                table2 = Table(title="AnimeFLV Iframe Download Links")
-                table2.add_column("Server", style="cyan")
-                table2.add_column("URL", style="magenta")
-
-                for link in iframe_links.download_links:
-                    url_display = (
-                        link.url[:60] + "..."
-                        if link.url and len(link.url) > 60
-                        else link.url or "N/A"
-                    )
-                    table2.add_row(link.server, url_display)
-
-                console.print(table2)
-
-                rprint(
-                    "\n[bold green]=== AnimeFLV Getting Final Download URL "
-                    + "===[/bold green]"
-                )
-
-                valid_links = [
-                    link
-                    for link in iframe_links.download_links
-                    if link.server in ANIMEFLV_SUPPORTED_SERVERS
-                ]
-
-                for link in valid_links:
-                    if link.url:
-                        final_url = await scraper_flv.get_file_download_link(
-                            download_info=link
-                        )
-                        if final_url:
-                            rprint(
-                                f"\n[green]Final download URL for {link.server}:"
-                                + "[/green]"
-                            )
-                            rprint(f"[cyan]{final_url}[/cyan]")
-            else:
-                rprint("[yellow]No iframe download links found for AnimeFLV[/yellow]")
-
-            elapsed_flv = time.perf_counter() - start_flv
-            rprint(f"\n[dim]AnimeFLV total time: {elapsed_flv:.2f}s[/dim]")
-    else:
-        rprint("[dim][yellow]AnimeFLV disabled[/yellow][/dim]")
 
     if ENABLE_JKANIME:
         rprint(

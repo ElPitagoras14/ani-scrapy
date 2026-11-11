@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.table import Table
 from rich import print as rprint
 
-from ani_scrapy import AnimeFLVScraper, JKAnimeScraper, AnimeAV1Scraper
+from ani_scrapy import JKAnimeScraper, AnimeAV1Scraper
 from ani_scrapy import enable_logging
 
 console = Console()
@@ -24,7 +24,6 @@ QUERY = "gach"
 ANIME_ID = "gachiakuta"
 EPISODE = 24
 
-ENABLE_ANIMEFLV = True
 ENABLE_JKANIME = True
 ENABLE_ANIMEAV1 = True
 
@@ -67,18 +66,6 @@ async def main():
     rprint(f"Query: '{QUERY}' | Anime ID: '{ANIME_ID}' | Episode: {EPISODE}\n")
 
     benchmarks = []
-
-    if ENABLE_ANIMEFLV:
-        rprint("[bold]Running AnimeFLV benchmark...[/bold]")
-        try:
-            results = await benchmark_scraper(
-                "AnimeFLV", AnimeFLVScraper, QUERY, ANIME_ID, EPISODE
-            )
-            benchmarks.append(results)
-        except Exception as e:
-            rprint(f"[red]AnimeFLV failed: {e}[/red]")
-    else:
-        rprint("[dim][yellow]AnimeFLV disabled[/yellow][/dim]")
 
     if ENABLE_JKANIME:
         rprint("[bold]Running JKAnime benchmark...[/bold]")

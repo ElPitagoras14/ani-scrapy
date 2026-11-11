@@ -184,7 +184,7 @@ class AniScrapyDoctor:
                 output = subprocess.check_output(
                     ["sysctl", "-n", "hw.memsize"], text=True
                 )
-                return f"{int(output.strip()) // (1024 ** 3)}GB"
+                return f"{int(output.strip()) // (1024**3)}GB"
             elif system == "Linux":
                 output = subprocess.check_output(["free", "-m"], text=True)
                 lines = output.split("\n")

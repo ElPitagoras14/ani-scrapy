@@ -3,12 +3,11 @@
 ## Setup
 
 - Use `uv` for packages and `.venv` to run scripts and tests
-- Run tools with `uv run --no-sync` (e.g. `uv run --no-sync pytest`): without `--no-sync`, uv uninstalls the package from `.venv` because `pyproject.toml` has no `[build-system]` yet
 
 ## Code Style
 
 - No conditional imports; absolute imports for package modules, relative for same directory
-- Type hints on function signatures (Python 3.10+); avoid `Any`
+- Type hints on function signatures (Python 3.11+); avoid `Any`
 - Prefer async/await; provide async context managers when appropriate
 - Errors: use the hierarchy `ScraperError` -> `ScraperNotFoundError`, `ScraperBlockedError`, `ScraperHTTPError`, `ScraperTimeoutError`, `ScraperParseError`
 - Logging: use `loguru.logger`. The library never configures Loguru: never call `logger.remove()` or modify global handlers in library code
@@ -22,6 +21,7 @@
 - Parsing logic lives in parsers, network coordination in scrapers
 - Clarify the problem before proposing solutions; offer alternatives with brief trade-offs when a real decision exists
 - Suggest design patterns only when they add real value
+- Docs, skills and `CLAUDE.md` stay concise: say each thing once, in one place, and drop what the reader does not need
 
 ## Workflow
 
@@ -33,9 +33,9 @@
 ## Git
 
 - Branches: `<type>/<short-description>` in kebab-case, types `feat|fix|refactor|chore`
-- Commits: `<type>(scope): <description>`, lowercase, imperative, max ~72 chars, small but complete; commit `pyproject.toml` last when it changes
+- Commits: `<type>(scope): <description>`, lowercase, imperative, max ~72 chars; as few commits as possible (usually one per change); if there are several, commit `pyproject.toml` last
 - Do NOT commit unless explicitly asked
-- Commits must NOT list Claude as co-author (no `Co-Authored-By` trailer)
+- Commits must NOT list Claude as co-author (no `Co-Authored-By` trailer); `.githooks/commit-msg` strips it as a backstop
 - PR titles follow the commit format; labels: `feature` (feat), `bug` (fix), `maintenance` (refactor/chore/docs)
 
 ## OpenSpec: applying a change
